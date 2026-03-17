@@ -7,6 +7,7 @@ import {
   clearJobSuccess,
   setRefreshing,
 } from '../slices/reminderSlice';
+import Pagination from '../../../components/common/Pagination';
 
 type ReminderStatus = 'SENT' | 'FAILED' | 'PENDING';
 
@@ -21,7 +22,6 @@ type Reminder = {
   error_message?: string | null;
   aging_config_id?: number | null;
   severity?: string | null;
-  days_overdue?: number | null;
   subject?: string | null;
   body?: string | null;
   [key: string]: unknown;
@@ -270,16 +270,7 @@ function ReminderDrawer({ reminder, onClose }: { reminder: Reminder; onClose: ()
                 {timeAgo(reminder.sent_at)}
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              {reminder.days_overdue != null && (
-                <>
-                  <p className="font-display" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f87171', lineHeight: 1 }}>
-                    {reminder.days_overdue}
-                  </p>
-                  <p style={{ fontSize: '0.65rem', color: 'var(--color-muted)', marginTop: '0.2rem' }}>days overdue</p>
-                </>
-              )}
-            </div>
+            
           </div>
 
           {statusKey === 'FAILED' && reminder.error_message && (
@@ -299,13 +290,9 @@ function ReminderDrawer({ reminder, onClose }: { reminder: Reminder; onClose: ()
             <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 0.875rem' }}>
               {reminder.customer_name  && <Row icon={<IconUser />}     label="Customer"    value={reminder.customer_name} />}
               {reminder.customer_email && <Row icon={<IconMail />}     label="Email"       value={reminder.customer_email} />}
-              {reminder.invoice_id     && <Row icon={<IconHash />}     label="Invoice"     value={`#${reminder.invoice_id}`} />}
-              {reminder.customer_id    && <Row icon={<IconHash />}     label="Customer ID" value={`#${reminder.customer_id}`} />}
               {reminder.sent_at        && <Row icon={<IconCalendar />} label="Sent At"     value={formatDateTime(reminder.sent_at)} />}
               {reminder.severity       && <Row icon={<IconZap />}      label="Severity"    value={<SeverityBadge severity={reminder.severity} />} />}
-              {reminder.aging_config_id && <Row icon={<IconHash />}    label="Config ID"   value={`#${reminder.aging_config_id}`} />}
-              {reminder.days_overdue != null && <Row icon={<IconCalendar />} label="Days Over" value={`${reminder.days_overdue} days`} />}
-            </div>
+               </div>
           </section>
 
           {reminder.subject && (
@@ -411,6 +398,8 @@ export default function RemindersPage() {
   const [search, setSearch]               = useState('');
   const [activeFilters, setActiveFilters] = useState<Set<ReminderStatus>>(new Set());
   const [sortDir, setSortDir]             = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage]     = useState(1);
+  const [pageSize, setPageSize]           = useState(25);
 
   useEffect(() => { dispatch(fetchRemindersThunk()); }, [dispatch]);
   useEffect(() => {
@@ -435,6 +424,7 @@ export default function RemindersPage() {
       next.has(s) ? next.delete(s) : next.add(s);
       return next;
     });
+    setCurrentPage(1);
   };
 
   const counts = ALL_STATUSES.reduce((acc, s) => {
@@ -464,6 +454,8 @@ export default function RemindersPage() {
     });
 
   const sentCount    = counts.SENT ?? 0;
+  const filteredTotal = filtered.length;
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const failedCount  = counts.FAILED ?? 0;
   const pendingCount = counts.PENDING ?? 0;
   const deliveryRate = reminders.length > 0
@@ -601,7 +593,7 @@ export default function RemindersPage() {
           <span style={{ color: 'var(--color-muted)', flexShrink: 0 }}><IconSearch /></span>
           <input
             type="text" placeholder="Search customer, invoice" value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
             style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--color-text)', fontSize: '0.78rem', fontFamily: "'DM Sans', sans-serif", flex: 1, minWidth: 0 }}
           />
           {search && (
@@ -689,17 +681,15 @@ export default function RemindersPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={thStyle}>#</th>
                   <th style={thStyle}>Status</th>
                   <th style={thStyle}>Customer</th>
                   <th style={thStyle}>Invoice</th>
                   <th style={thStyle}>Severity</th>
-                  <th style={thStyle}>Days Over</th>
                   <th style={thStyle}>Sent</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => {
+                {paginated.map((r, i) => {
                   const statusKey = (r.status ?? 'PENDING').toString().toUpperCase();
                   const isFailed = statusKey === 'FAILED';
                   return (
@@ -707,7 +697,7 @@ export default function RemindersPage() {
                       key={r.id}
                       onClick={() => setSelected(r)}
                       style={{
-                        borderBottom: i < filtered.length - 1 ? '1px solid var(--color-border)' : 'none',
+                        borderBottom: i < paginated.length - 1 ? '1px solid var(--color-border)' : 'none',
                         cursor: 'pointer', transition: 'background 0.15s',
                         background: isFailed ? 'rgba(239,68,68,0.02)' : 'transparent',
                         animation: `fadeSlideUp 0.3s var(--ease-out-expo) ${Math.min(i, 15) * 0.025}s both`,
@@ -715,12 +705,11 @@ export default function RemindersPage() {
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-2)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = isFailed ? 'rgba(239,68,68,0.02)' : 'transparent'}
                     >
-                      <td style={{ padding: '0.75rem 1rem', fontSize: '0.72rem', color: 'var(--color-muted)' }}>#{r.id}</td>
                       <td style={{ padding: '0.75rem 1rem' }}><StatusBadge status={r.status} /></td>
                       <td style={{ padding: '0.75rem 1rem' }}>
                         <div>
                           <p style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
-                            {r.customer_name ?? `#${r.customer_id ?? '—'}`}
+                            {r.customer_name ?? '—'}
                           </p>
                           {r.customer_email && (
                             <p style={{ fontSize: '0.65rem', color: 'var(--color-muted)', marginTop: '0.1rem' }}>{r.customer_email}</p>
@@ -728,17 +717,12 @@ export default function RemindersPage() {
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem 1rem', fontSize: '0.78rem', color: 'var(--color-accent)', fontWeight: 500 }}>
-                        {r.invoice_id ? `#${r.invoice_id}` : '—'}
+                        {(r.invoice_number as string) ?? (r.invoice_id ? `INV-${r.invoice_id}` : '—')}
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>
                         <SeverityBadge severity={r.severity} />
                       </td>
-                      <td style={{ padding: '0.75rem 1rem' }}>
-                        {r.days_overdue != null
-                          ? <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600 }}>{r.days_overdue}d</span>
-                          : <span style={{ color: 'var(--color-faint)', fontSize: '0.72rem' }}>—</span>
-                        }
-                      </td>
+                      
                       <td style={{ padding: '0.75rem 1rem', fontSize: '0.72rem', color: 'var(--color-muted)', whiteSpace: 'nowrap' }}>
                         {r.sent_at ? (
                           <div>
@@ -755,18 +739,14 @@ export default function RemindersPage() {
           </div>
         )}
 
-        {!loading && filtered.length > 0 && (
-          <div style={{
-            padding: '0.625rem 1rem', borderTop: '1px solid var(--color-border)',
-            background: 'var(--color-surface-2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <p style={{ fontSize: '0.68rem', color: 'var(--color-muted)' }}>
-              {filtered.length} reminder{filtered.length !== 1 ? 's' : ''}
-              {(activeFilters.size > 0 || search) && ` (filtered from ${reminders.length})`}
-            </p>
-            <p style={{ fontSize: '0.68rem', color: 'var(--color-muted)' }}>Click any row to view details</p>
-          </div>
+        {!loading && filteredTotal > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredTotal}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={size => { setPageSize(size); setCurrentPage(1); }}
+          />
         )}
       </div>
 
