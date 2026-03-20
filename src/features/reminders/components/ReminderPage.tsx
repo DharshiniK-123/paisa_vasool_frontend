@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
-import {
-  fetchRemindersThunk,
-  runAgingJobThunk,
-  clearReminderError,
-  clearJobSuccess,
-  setRefreshing,
-} from '../slices/reminderSlice';
+import {fetchRemindersThunk,runAgingJobThunk,clearReminderError,clearJobSuccess,setRefreshing,} from '../slices/reminderSlice';
 import Pagination from '../../../components/common/Pagination';
 
 type ReminderStatus = 'SENT' | 'FAILED' | 'PENDING';

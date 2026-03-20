@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { usePayments } from '../hooks/usePayments';
-import { paymentService } from '../services/paymentService';
 import InlineUploadPanel from '../../documents/components/InlineUploadPanel';
 import type { Payment } from '../types/Payment';
 import Pagination from '../../../components/common/Pagination';
@@ -22,7 +21,7 @@ const IconNote        = () => (<svg width="13" height="13" viewBox="0 0 24 24" f
 const IconTrash       = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>);
 const IconCheck       = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
 
-/* ── Helpers ─────────────────────────────────────────────── */
+
 function Spinner({ size = 18, color = 'var(--color-accent)' }: { size?: number; color?: string }) {
   return <div style={{ width: size, height: size, borderRadius: '50%', border: `2px solid ${color}22`, borderTopColor: color, animation: 'spin 0.65s linear infinite', flexShrink: 0 }} />;
 }
@@ -53,36 +52,11 @@ function ModeBadge({ mode }: { mode?: string | null }) {
   return <span style={{ display: 'inline-block', padding: '0.18rem 0.6rem', borderRadius: 99, fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>{c.label}</span>;
 }
 
-/* ── Inline Upload Panel ─────────────────────────────────── */
 
-/* ── Delete Modal ────────────────────────────────────────── */
-function DeleteConfirmModal({ label, onConfirm, onCancel, deleting }: { label: string; onConfirm: () => void; onCancel: () => void; deleting: boolean }) {
-  return (
-    <>
-      <div onClick={!deleting ? onCancel : undefined} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)', zIndex: 40 }} />
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '100%', maxWidth: 400, zIndex: 50, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 16, padding: '2rem', boxShadow: 'var(--shadow-lg)', animation: 'popIn 0.25s var(--ease-bounce) both' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', textAlign: 'center' }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(239,68,68,0.08)', border: '2px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}><IconTrash /></div>
-          <div>
-            <h3 className="font-display" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Delete {label}?</h3>
-            <p style={{ fontSize: '0.78rem', color: 'var(--color-muted)', lineHeight: 1.65 }}>Do you want to delete the payment details?</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', width: '100%' }}>
-            <button onClick={onCancel} disabled={deleting} className="btn-secondary" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cancel</button>
-            <button onClick={onConfirm} disabled={deleting} style={{ padding: '0.75rem', borderRadius: 10, border: 'none', cursor: deleting ? 'not-allowed' : 'pointer', background: '#ef4444', color: '#fff', fontWeight: 600, fontSize: '0.82rem', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', opacity: deleting ? 0.6 : 1, transition: 'opacity 0.15s' }}>
-              {deleting ? <Spinner size={14} color="#fff" /> : <IconTrash />}
-              {deleting ? 'Deleting…' : 'Delete'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
 
-/* ── Payment Drawer ──────────────────────────────────────── */
+
 function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => void }) {
-  const KNOWN_KEYS = ['id','payer_name','payer_email','payer_phone','amount','payment_date','reference_number','bank_name','payment_mode','notes','document_id','customer_id','is_deleted','isdeleted','updated_at','created_at'];
+  const KNOWN_KEYS = ['id','payer_name','payer_email','payer_phone','amount','payment_date','reference_number','bank_name','payment_mode','notes','document_id','customer_id','updated_at','created_at'];
   const Row = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: boolean }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0', borderBottom: '1px solid var(--color-border)' }}>
       <div style={{ color: 'var(--color-muted)', flexShrink: 0, width: 16, display: 'flex', justifyContent: 'center' }}>{icon}</div>
@@ -159,12 +133,12 @@ function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => 
   );
 }
 
-/* ── Main Component ──────────────────────────────────────── */
+
+
 export default function PaymentTable() {
   const { payments, loading, refreshing, error, refresh, clearError } = usePayments();
 
   const [selected, setSelected]         = useState<Payment | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Payment | null>(null);
   const [deleting, setDeleting]         = useState(false);
   const [search, setSearch]             = useState('');
   const [modeFilter, setModeFilter]     = useState<string | null>(null);
@@ -173,12 +147,7 @@ export default function PaymentTable() {
   const [currentPage, setCurrentPage]   = useState(1);
   const [pageSize, setPageSize]         = useState(25);
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try { await paymentService.delete(deleteTarget.id); refresh(); setDeleteTarget(null); }
-    catch { } finally { setDeleting(false); }
-  };
+
 
   const modes = Array.from(new Set(payments.map(p => p.payment_mode?.toUpperCase()).filter(Boolean) as string[]));
 
@@ -222,7 +191,7 @@ export default function PaymentTable() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 1200 }}>
-      {/* Header */}
+    
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.15em', color: '#60a5fa', marginBottom: '0.35rem' }}>Incoming</p>
@@ -234,7 +203,6 @@ export default function PaymentTable() {
         >{refreshing ? <Spinner size={13} /> : <IconRefresh />} Refresh</button>
       </div>
 
-      {/* Stats */}
       {!loading && payments.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.625rem' }}>
           {[
@@ -263,7 +231,6 @@ export default function PaymentTable() {
         </div>
       )}
 
-      {/* ── Inline Upload ── */}
       <InlineUploadPanel docType="PAYMENT" onSuccess={refresh} />
 
       {error && (
@@ -273,7 +240,6 @@ export default function PaymentTable() {
         </div>
       )}
 
-      {/* Filters */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 9, padding: '0.55rem 0.875rem', flex: '1 1 200px', maxWidth: 300 }}>
           <span style={{ color: 'var(--color-muted)', flexShrink: 0 }}><IconSearch /></span>
@@ -297,7 +263,6 @@ export default function PaymentTable() {
         )}
       </div>
 
-      {/* Table */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><Spinner /></div>
@@ -337,12 +302,7 @@ export default function PaymentTable() {
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.82rem', fontWeight: 700, color: '#60a5fa', whiteSpace: 'nowrap' }}>{formatCurrency(p.amount)}</td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: 'var(--color-muted)', whiteSpace: 'nowrap' }}>{formatDate(p.payment_date)}</td>
-                    <td style={{ padding: '0.5rem 1rem' }} onClick={e => e.stopPropagation()}>
-                      <button onClick={() => setDeleteTarget(p)} title="Delete payment" style={{ background: 'none', border: '1px solid transparent', borderRadius: 7, padding: '0.35rem', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex', transition: 'all 0.15s' }}
-                        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(239,68,68,0.25)'; el.style.color = '#ef4444'; el.style.background = 'rgba(239,68,68,0.06)'; }}
-                        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'transparent'; el.style.color = 'var(--color-muted)'; el.style.background = 'none'; }}
-                      ><IconTrash /></button>
-                    </td>
+                   
                   </tr>
                 ))}
               </tbody>
@@ -355,9 +315,7 @@ export default function PaymentTable() {
       </div>
 
       {selected && <PaymentDrawer payment={selected} onClose={() => setSelected(null)} />}
-      {deleteTarget && (
-        <DeleteConfirmModal label={`Payment ${deleteTarget.reference_number ?? `#${deleteTarget.id}`}`} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} deleting={deleting} />
-      )}
+      
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

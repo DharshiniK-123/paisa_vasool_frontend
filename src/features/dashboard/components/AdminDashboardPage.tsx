@@ -10,8 +10,8 @@ import {
   PointElement, Filler,
   Title,
 } from 'chart.js';
-import { adminService } from '../services/adminService';
-import type { FinanceUser, UserActivityStat } from '../types';
+import { adminService } from '../../UserManagement/services/adminService';
+import type { FinanceUser, UserActivityStat } from '../../UserManagement/types';
 import { ROUTES } from '../../../config/constants';
 
 ChartJS.register(
@@ -24,7 +24,7 @@ ChartJS.register(
   Title,
 );
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
+
 const IconUsers    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 const IconActive   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
 const IconInactive = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>;
@@ -43,7 +43,6 @@ function SkeletonBar({ w = '100%', h = 14 }: { w?: string | number; h?: number }
   return <div style={{ width: w, height: h, borderRadius: 4, background: 'var(--color-surface-2)', animation: 'shimmer 1.4s ease infinite' }} />;
 }
 
-// ── Chart card wrapper ────────────────────────────────────────────────────────
 function ChartCard({ title, subtitle, children, loading }: {
   title: string; subtitle?: string; children: React.ReactNode; loading?: boolean;
 }) {
@@ -63,7 +62,7 @@ function ChartCard({ title, subtitle, children, loading }: {
   );
 }
 
-// ── Doughnut — Active vs Inactive ─────────────────────────────────────────────
+
 function ActiveInactiveChart({ active, inactive }: { active: number; inactive: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<ChartJS | null>(null);
@@ -127,7 +126,7 @@ function ActiveInactiveChart({ active, inactive }: { active: number; inactive: n
   );
 }
 
-// ── Line chart — User growth ──────────────────────────────────────────────────
+
 function UserGrowthChart({ users }: { users: FinanceUser[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<ChartJS | null>(null);
@@ -197,7 +196,7 @@ function UserGrowthChart({ users }: { users: FinanceUser[] }) {
   return <div style={{ height: 220 }}><canvas ref={canvasRef} /></div>;
 }
 
-// ── Grouped bar — activity per user ──────────────────────────────────────────
+
 function UserActivityChart({ users, activityMap }: { users: FinanceUser[]; activityMap: Record<number, UserActivityStat> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<ChartJS | null>(null);
@@ -242,7 +241,7 @@ function UserActivityChart({ users, activityMap }: { users: FinanceUser[]; activ
   return <div style={{ height: 240 }}><canvas ref={canvasRef} /></div>;
 }
 
-// ── Horizontal bar — top users leaderboard ────────────────────────────────────
+
 function TopUsersChart({ users, activityMap }: { users: FinanceUser[]; activityMap: Record<number, UserActivityStat> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<ChartJS | null>(null);
@@ -290,7 +289,7 @@ function TopUsersChart({ users, activityMap }: { users: FinanceUser[]; activityM
   return <div style={{ height: Math.max(160, ranked.length * 44) }}><canvas ref={canvasRef} /></div>;
 }
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
+
 function StatCard({ label, value, icon, color, glow, loading, sub }: {
   label: string; value: number | string; icon: React.ReactNode;
   color: string; glow: string; loading: boolean; sub?: string;
@@ -313,7 +312,7 @@ function StatCard({ label, value, icon, color, glow, loading, sub }: {
   );
 }
 
-// ── Activity bar ──────────────────────────────────────────────────────────────
+
 function ActivityBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(4, (value / max) * 100) : 4;
   return (
@@ -323,7 +322,7 @@ function ActivityBar({ value, max, color }: { value: number; max: number; color:
   );
 }
 
-// ── User Activity Row ─────────────────────────────────────────────────────────
+
 function UserActivityRow({ user, stats, maxInvoices, maxPayments, maxMatches, rank, onToggle, toggling }: {
   user: FinanceUser; stats: UserActivityStat | null; maxInvoices: number; maxPayments: number; maxMatches: number; rank: number; onToggle: (u: FinanceUser) => void; toggling: boolean;
 }) {
@@ -385,7 +384,7 @@ function UserActivityRow({ user, stats, maxInvoices, maxPayments, maxMatches, ra
   );
 }
 
-// ── Confirm Dialog ────────────────────────────────────────────────────────────
+
 function ConfirmDialog({ user, onConfirm, onCancel, loading }: { user: FinanceUser; onConfirm: () => void; onCancel: () => void; loading: boolean }) {
   const isActive = user.is_active === 'active';
   const action = isActive ? 'Deactivate' : 'Activate';
@@ -419,7 +418,7 @@ const ROLE_COLORS: Record<string, [string, string]> = {
   admin:             ['#f59e0b', 'rgba(245,158,11,0.1)'],
 };
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
 
@@ -504,7 +503,6 @@ export default function AdminDashboardPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--color-accent)', fontWeight: 700, marginBottom: '0.25rem' }}>Admin</p>
@@ -522,11 +520,9 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Banners */}
       {error      && <div className="banner banner-error   animate-fade-in"><span className="banner-icon">⚠</span><p>{error}</p></div>}
       {successMsg && <div className="banner banner-success animate-fade-in"><span className="banner-icon">✓</span><p>{successMsg}</p></div>}
 
-      {/* Stat cards */}
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <StatCard label="Total Users"       value={users.length}  icon={<IconUsers />}    color="var(--color-accent)" glow="rgba(37,99,235,0.18)"  loading={loadingUsers} sub={`${roleCounts['finance_associate'] ?? 0} finance associates`} />
         <StatCard label="Active"            value={activeCount}   icon={<IconActive />}   color="#16a34a"             glow="rgba(22,163,74,0.18)"  loading={loadingUsers} sub={users.length > 0 ? `${Math.round((activeCount / users.length) * 100)}% of all users` : undefined} />
@@ -534,7 +530,6 @@ export default function AdminDashboardPage() {
         <StatCard label="Joined This Month" value={thisMonth}     icon={<IconNewUser />}  color="#f59e0b"             glow="rgba(245,158,11,0.15)" loading={loadingUsers} sub="New signups" />
       </div>
 
-      {/* System totals */}
       {!loadingActivity && hasStats && (
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           {[
@@ -553,7 +548,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Charts row 1 — always shown */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
         <ChartCard title="User Status" subtitle="Active vs inactive breakdown" loading={loadingUsers}>
           {!loadingUsers && <ActiveInactiveChart active={activeCount} inactive={inactiveCount} />}
@@ -563,7 +557,6 @@ export default function AdminDashboardPage() {
         </ChartCard>
       </div>
 
-      {/* Charts row 2 — only when stats available */}
       {hasStats && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <ChartCard title="Activity Breakdown" subtitle="Invoices, payments & matches per user" loading={loadingActivity}>
@@ -575,7 +568,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* No stats yet notice */}
       {!loadingActivity && !hasStats && (
         <div style={{ padding: '0.875rem 1.25rem', borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span>⏳</span>
@@ -585,7 +577,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* User Activity Table */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', background: 'var(--color-surface-2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

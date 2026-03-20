@@ -2,7 +2,7 @@ export type PaymentStatus = 'PAID' | 'UNPAID' | 'PARTIAL' | 'OVERPAID';
 
 export interface InvoiceMatch {
   match_id: number;
-  match_status: string;          // FULL | PARTIAL | OVERPAYMENT | FAILED | DUPLICATE
+  match_status: string;
   matched_amount?: number | null;
   amount_pending?: number | null;
   match_reason?: string | null;
@@ -22,7 +22,8 @@ export interface Invoice {
   invoice_date?: string | null;
   payment_status?: string | null;
   document_id?: number | null;
-  matches?: InvoiceMatch[];        
+  is_deleted?: boolean;
+  matches?: InvoiceMatch[];
   [key: string]: unknown;
 }
 
