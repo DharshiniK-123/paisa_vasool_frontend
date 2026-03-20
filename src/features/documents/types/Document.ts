@@ -26,8 +26,8 @@ export interface InvoiceRecord {
 export interface PaymentRecord {
   id?: number;
   invoice_no?: string | null;
-  payer_name?: string | null;
-  payer_email?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
   payment_amount?: number | null;
   paid_date?: string | null;
   payment_reference?: string | null;
@@ -50,7 +50,7 @@ export interface JobStatusResponse {
   document_id?: number;
   records_count?: number;
   preview_data?: (InvoiceRecord | PaymentRecord)[];
-  error?: string;
+  error?: string | Record<string, unknown>;
   message?: string;
 }
 
@@ -67,16 +67,12 @@ export interface DocumentState {
   uploadedDocumentId: number | null;
   uploadedFileName: string | null;
   uploadedJobId: string | null;
-
   processing: boolean;
   processError: string | null;
-
   previewRows: (InvoiceRecord | PaymentRecord)[];
-
   saving: boolean;
   saveError: string | null;
   savedCount: number | null;
-
   documents: Document[];
   documentsLoading: boolean;
   documentsError: string | null;

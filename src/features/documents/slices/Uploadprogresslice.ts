@@ -13,25 +13,27 @@ export type UploadProgressStatus =
   | 'failed';
 
 export interface UploadProgressState {
-  status:       UploadProgressStatus;
-  jobId:        string | null;
-  documentId:   number | null;
-  fileName:     string | null;
-  documentType: DocumentType | null;
-  previewRows:  (InvoiceRecord | PaymentRecord)[];
-  error:        string | null;
-  savedCount:   number | null;
+  status:          UploadProgressStatus;
+  jobId:           string | null;
+  documentId:      number | null;
+  fileName:        string | null;
+  documentType:    DocumentType | null;
+  previewRows:     (InvoiceRecord | PaymentRecord)[];
+  error:           string | null;
+  savedCount:      number | null;
+  reviewRequested: boolean; 
 }
 
 const initialState: UploadProgressState = {
-  status:       'idle',
-  jobId:        null,
-  documentId:   null,
-  fileName:     null,
-  documentType: null,
-  previewRows:  [],
-  error:        null,
-  savedCount:   null,
+  status:          'idle',
+  jobId:           null,
+  documentId:      null,
+  fileName:        null,
+  documentType:    null,
+  previewRows:     [],
+  error:           null,
+  savedCount:      null,
+  reviewRequested: false,
 };
 
 
@@ -84,6 +86,39 @@ const uploadProgressSlice = createSlice({
       state.savedCount   = null;
     },
 
+    pollingStarted(state) {
+      state.status = 'polling';
+      state.error  = null;
+    },
+
+    extractionDone(state, action: PayloadAction<(InvoiceRecord | PaymentRecord)[]>) {
+      state.status      = 'extracted';
+      state.previewRows = action.payload;
+    },
+
+    savingStarted(state) {
+      state.status = 'saving';
+      state.error  = null;
+    },
+
+    saveDone(state, action: PayloadAction<number>) {
+      state.status     = 'saved';
+      state.savedCount = action.payload;
+    },
+
+    uploadFailed(state, action: PayloadAction<string>) {
+      state.status = 'failed';
+      state.error  = action.payload;
+    },
+
+    requestReview(state) {
+      state.reviewRequested = true;
+    },
+
+    clearReviewRequest(state) {
+      state.reviewRequested = false;
+    },
+
     updatePreviewRows(state, action: PayloadAction<(InvoiceRecord | PaymentRecord)[]>) {
       state.previewRows = action.payload;
     },
@@ -120,5 +155,16 @@ const uploadProgressSlice = createSlice({
   },
 });
 
-export const { uploadStarted, updatePreviewRows, reset } = uploadProgressSlice.actions;
+export const {
+  uploadStarted,
+  pollingStarted,
+  extractionDone,
+  savingStarted,
+  saveDone,
+  uploadFailed,
+  requestReview,
+  clearReviewRequest,
+  updatePreviewRows,
+  reset,
+} = uploadProgressSlice.actions;
 export default uploadProgressSlice.reducer;

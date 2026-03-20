@@ -1,4 +1,3 @@
-export { default as Uploadocument } from './components/UploadPage'
-export { useDocumentUpload } from './hooks/usedocumentupload';
+export { useDocumentUpload } from './hooks/useDocumentUpload';
 export { documentService } from './services/documentService';
 export * from './types/Document';
