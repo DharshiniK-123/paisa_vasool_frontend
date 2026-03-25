@@ -73,6 +73,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
       zIndex: 30, overflow: 'hidden', flexShrink: 0,
       boxShadow: '1px 0 0 var(--color-border)',
     }}>
+      {/* Logo */}
       <div style={{
         padding: collapsed ? '0 0' : '0 1.125rem',
         height: 60, borderBottom: '1px solid var(--color-border)',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePayments } from '../hooks/usePayments';
+import { paymentService } from '../services/paymentService';
 import InlineUploadPanel from '../../documents/components/InlineUploadPanel';
 import type { Payment } from '../types/Payment';
 import Pagination from '../../../components/common/Pagination';
@@ -34,6 +35,7 @@ function formatDate(str?: string | null) {
   const d = new Date(str);
   return isNaN(d.getTime()) ? str : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
 
 const MODE_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   UPI:    { label: 'UPI',    bg: 'rgba(52,211,153,0.1)',   text: '#34d399', border: 'rgba(52,211,153,0.25)'  },

@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../../config/constants';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
-import {fetchDashboardSummaryThunk,fetchRecentMatchesThunk,} from '../slices/dashboardSlice';
-import {fetchUnmatchedPaymentsThunk,fetchUnmatchedInvoicesThunk,} from '../../matching/slices/matchingSlice';
+import {
+  fetchDashboardSummaryThunk,
+  fetchRecentMatchesThunk,
+} from '../slices/dashboardSlice';
+import {
+  fetchUnmatchedPaymentsThunk,
+  fetchUnmatchedInvoicesThunk,
+} from '../../matching/slices/matchingSlice';
 import axiosInstance from '../../../lib/axios';
 
 type MatchStatus = 'FULL' | 'PARTIAL' | 'OVERPAYMENT' | 'FAILED';
@@ -59,6 +65,7 @@ type Discrepancy = {
   resolved_reason: string | null;
 };
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
 const IconCheck      = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
 const IconPartial    = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
 const IconOver       = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>);
@@ -73,8 +80,7 @@ const IconChevLeft   = () => (<svg width="13" height="13" viewBox="0 0 24 24" fi
 const IconChevRight  = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>);
 const IconResolved   = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>);
 
-
-
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function Spinner({ size = 18, color = 'var(--color-accent)' }: { size?: number; color?: string }) {
   return <div style={{ width: size, height: size, borderRadius: '50%', border: `2px solid ${color}22`, borderTopColor: color, animation: 'spin 0.65s linear infinite', flexShrink: 0 }} />;
 }
@@ -103,8 +109,7 @@ function isOverdue(dateStr?: string | null) {
   return new Date(dateStr) < new Date();
 }
 
-
-
+// ─── Shared styles ────────────────────────────────────────────────────────────
 const thStyle: React.CSSProperties = {
   padding: '0.6rem 1rem', textAlign: 'left',
   fontSize: '0.6rem', fontWeight: 600, fontFamily: 'Outfit, sans-serif',
@@ -118,8 +123,7 @@ const tdStyle: React.CSSProperties = {
   overflow: 'hidden', textOverflow: 'ellipsis',
 };
 
-
-
+// ─── Mini Pagination ──────────────────────────────────────────────────────────
 const PAGE_SIZE = 8;
 
 function MiniPagination({ total, page, onPage }: { total: number; page: number; onPage: (p: number) => void }) {
@@ -154,8 +158,7 @@ function MiniPagination({ total, page, onPage }: { total: number; page: number; 
   );
 }
 
-
-
+// ─── Status config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<MatchStatus, { label: string; icon: React.ReactNode; bg: string; text: string; border: string; glow: string }> = {
   FULL:        { label: 'Fully Paid',  icon: <IconCheck />,   bg: 'rgba(52,211,153,0.1)',  text: '#34d399', border: 'rgba(52,211,153,0.25)',  glow: 'rgba(52,211,153,0.08)'  },
   PARTIAL:     { label: 'Partial',     icon: <IconPartial />, bg: 'rgba(251,191,36,0.1)',  text: '#fbbf24', border: 'rgba(251,191,36,0.25)',  glow: 'rgba(251,191,36,0.06)'  },
@@ -172,8 +175,7 @@ function StatusBadge({ status }: { status: MatchStatus }) {
   );
 }
 
-
-
+// ─── Summary Cards ────────────────────────────────────────────────────────────
 function SummaryCards({ summary, loading }: { summary: DashboardSummary | null; loading: boolean }) {
   const navigate = useNavigate();
   const total = summary ? Object.values(summary).reduce((acc, arr) => acc + arr.length, 0) : 0;
@@ -226,8 +228,7 @@ function SummaryCards({ summary, loading }: { summary: DashboardSummary | null; 
   );
 }
 
-
-
+// ─── Unmatched Section (with pagination) ─────────────────────────────────────
 function UnmatchedSection({ unmatchedPayments, unmatchedInvoices, loading }: {
   unmatchedPayments: PaymentDetail[];
   unmatchedInvoices: InvoiceData[];
@@ -237,7 +238,7 @@ function UnmatchedSection({ unmatchedPayments, unmatchedInvoices, loading }: {
   const [tab, setTab]   = useState<'payments' | 'invoices'>('payments');
   const [page, setPage] = useState(1);
 
-
+  // Reset page when tab changes
   const handleTab = (t: 'payments' | 'invoices') => { setTab(t); setPage(1); };
 
   const rows    = tab === 'payments' ? unmatchedPayments : unmatchedInvoices;
@@ -253,7 +254,7 @@ function UnmatchedSection({ unmatchedPayments, unmatchedInvoices, loading }: {
 
   return (
     <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden' }}>
-  
+      {/* Header */}
       <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', background: 'var(--color-surface-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}>
@@ -340,7 +341,7 @@ function UnmatchedSection({ unmatchedPayments, unmatchedInvoices, loading }: {
   );
 }
 
-
+// ─── Recent Matches (with pagination) ────────────────────────────────────────
 function RecentMatches({ matches, loading }: { matches: MatchRecord[]; loading: boolean }) {
   const navigate  = useNavigate();
   const [page, setPage] = useState(1);
@@ -361,6 +362,7 @@ function RecentMatches({ matches, loading }: { matches: MatchRecord[]; loading: 
           View all <IconArrowRight />
         </button>
       </div>
+
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '2.5rem' }}><Spinner /></div>
       ) : matches.length === 0 ? (
@@ -407,7 +409,7 @@ function RecentMatches({ matches, loading }: { matches: MatchRecord[]; loading: 
   );
 }
 
-
+// ─── Quick Actions ────────────────────────────────────────────────────────────
 function QuickActions() {
   const navigate = useNavigate();
   const actions = [
@@ -437,7 +439,7 @@ function QuickActions() {
   );
 }
 
-
+// ─── Discrepancies Panel (with pagination + show resolved toggle) ─────────────
 function DiscrepanciesPanel() {
   const [items, setItems]           = useState<Discrepancy[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -463,6 +465,7 @@ function DiscrepanciesPanel() {
 
   useEffect(() => { load(showResolved); }, [showResolved]);
 
+  // Reset page when toggle changes
   const handleToggle = () => { setShowResolved(r => !r); setPage(1); setExpanded(null); };
 
   const openCount     = items.filter(d => !d.is_resolved).length;
@@ -471,7 +474,7 @@ function DiscrepanciesPanel() {
 
   return (
     <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden' }}>
-    
+      {/* Header */}
       <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.625rem', background: 'var(--color-surface-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171', fontSize: '0.75rem' }}>⚠</div>
@@ -481,7 +484,7 @@ function DiscrepanciesPanel() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-        
+          {/* Open / Resolved counts */}
           {!loading && (
             <>
               {openCount > 0 && (
@@ -496,10 +499,12 @@ function DiscrepanciesPanel() {
               )}
             </>
           )}
+          {/* Show resolved toggle */}
           <button onClick={handleToggle}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.65rem', borderRadius: 7, cursor: 'pointer', fontSize: '0.68rem', fontWeight: 600, fontFamily: 'Outfit, sans-serif', border: showResolved ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--color-border)', background: showResolved ? 'rgba(52,211,153,0.08)' : 'var(--color-surface)', color: showResolved ? '#34d399' : 'var(--color-muted)', transition: 'all 0.15s' }}>
             <IconResolved /> {showResolved ? 'Hide resolved' : 'Show resolved'}
           </button>
+          {/* Refresh */}
           <button onClick={() => load(showResolved)}
             style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: 7, padding: '0.35rem', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex' }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--color-text)'}
@@ -509,6 +514,7 @@ function DiscrepanciesPanel() {
           </button>
         </div>
       </div>
+
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1.25rem' }}>
           <Spinner size={16} color="#f87171" />
@@ -539,6 +545,7 @@ function DiscrepanciesPanel() {
                     onMouseEnter={e => { if (!isOpen) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
                     onMouseLeave={e => { if (!isOpen) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
+                    {/* Status badge */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flexShrink: 0 }}>
                       <span style={{ padding: '0.15rem 0.5rem', borderRadius: 99, fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: `${color}18`, color, border: `1px solid ${color}33` }}>
                         {item.match_status}
@@ -549,6 +556,7 @@ function DiscrepanciesPanel() {
                         </span>
                       )}
                     </div>
+                    {/* Main content */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.payer_name ?? item.payer_email ?? 'Unknown payer'}
@@ -558,6 +566,7 @@ function DiscrepanciesPanel() {
                         {isResolved && item.resolved_reason ? `✓ ${item.resolved_reason}` : (item.match_reason ?? '—')}
                       </p>
                     </div>
+                    {/* Amount + chevron */}
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text)' }}>
                         {item.payment_amount != null ? formatCurrency(item.payment_amount, item.currency) : '—'}
@@ -572,9 +581,10 @@ function DiscrepanciesPanel() {
                     </svg>
                   </div>
 
+                  {/* Expanded detail */}
                   {isOpen && (
                     <div style={{ padding: '0.75rem 1.25rem 1.125rem', background: bg, borderTop: `1px solid ${border}` }}>
-                    
+                      {/* Resolved reason banner */}
                       {isResolved && item.resolved_reason && (
                         <div style={{ marginBottom: '0.875rem', padding: '0.625rem 0.875rem', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 8, display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                           <span style={{ color: '#34d399', flexShrink: 0, marginTop: '0.1rem' }}><IconResolved /></span>
@@ -584,6 +594,7 @@ function DiscrepanciesPanel() {
                           </div>
                         </div>
                       )}
+                      {/* Original reason */}
                       <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color, marginBottom: '0.4rem' }}>
                         {isResolved ? 'Original Reason' : 'Reason'}
                       </p>
@@ -623,6 +634,7 @@ function DiscrepanciesPanel() {
   );
 }
 
+// ─── Dashboard Page ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -652,7 +664,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 1200 }}>
-     
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-accent)', marginBottom: '0.35rem' }}>Overview</p>

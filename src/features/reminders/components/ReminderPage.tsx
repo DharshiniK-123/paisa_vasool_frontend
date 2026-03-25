@@ -247,6 +247,7 @@ function ReminderDrawer({ reminder, onClose }: { reminder: Reminder; onClose: ()
             <IconClose />
           </button>
         </div>
+
         <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{
             background: 'linear-gradient(135deg, var(--color-surface-2), var(--color-surface-3))',
@@ -275,6 +276,7 @@ function ReminderDrawer({ reminder, onClose }: { reminder: Reminder; onClose: ()
               </div>
             </div>
           )}
+
           <section>
             <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-muted)', marginBottom: '0.5rem' }}>
               Details
@@ -378,6 +380,7 @@ function RunJobModal({ onConfirm, onCancel, running }: {
     </>
   );
 }
+
 const ALL_STATUSES: ReminderStatus[] = ['SENT', 'FAILED', 'PENDING'];
 
 export default function RemindersPage() {

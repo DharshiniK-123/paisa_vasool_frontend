@@ -119,6 +119,7 @@ export default function UploadProgressBanner() {
         <div style={{ flexShrink: 0, color }}>
           {isWorking || isSaving ? <Spinner /> : isFailed ? '⚠' : '✓'}
         </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {fileName ?? 'Document'}

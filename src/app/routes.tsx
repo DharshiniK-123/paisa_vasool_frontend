@@ -58,6 +58,7 @@ export default function AppRoutes() {
     <Suspense fallback={<LoadingSpinner fullScreen />}>
       <Routes>
         <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.LOGIN} replace />} />
+
         <Route element={<AuthLayout />}>
           <Route path={ROUTES.LOGIN}    element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path={ROUTES.REGISTER} element={<GuestRoute><RegisterPage /></GuestRoute>} />
