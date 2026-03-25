@@ -24,12 +24,6 @@ function useAuthState() {
   });
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isVerifying } = useAuthState();
-  if (isVerifying) return <LoadingSpinner fullScreen />;
-  return isAuthenticated ? <>{children}</> : <Navigate to={ROUTES.LOGIN} replace />;
-}
-
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isVerifying, user } = useAuthState();
   if (isVerifying) return <LoadingSpinner fullScreen />;
