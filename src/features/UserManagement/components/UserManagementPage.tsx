@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../services/adminService';
 import type { FinanceUser, CreateUserPayload } from '../types';
+import { extractErrorMessage } from '../../../utils/errorUtils';
 
 
 const IconUsers = () => (
@@ -161,7 +162,7 @@ function validateForm(form: CreateUserPayload): FormErrors {
   else if (!/[a-z]/.test(form.password)) errs.password = 'Must contain a lowercase letter';
   else if (!/[A-Z]/.test(form.password)) errs.password = 'Must contain an uppercase letter';
   else if (!/[0-9]/.test(form.password)) errs.password = 'Must contain a number';
-  else if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>/?~]/.test(form.password)) errs.password = 'Must contain a special character';
+  else if (!/[!@#$%^&*()_+\-=[\]{}|;:,.<>/?~]/.test(form.password)) errs.password = 'Must contain a special character';
   return errs;
 }
 
@@ -185,8 +186,8 @@ function CreateUserDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
       const created = await adminService.createUser(form);
       onCreated(created);
       onClose();
-    } catch (err: any) {
-      setApiError(err?.response?.data?.detail ?? 'Failed to create user. Please try again.');
+    } catch (err: unknown) {
+      setApiError(extractErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -427,8 +428,8 @@ export default function UserManagementPage() {
     try {
       const data = await adminService.listUsers();
       setUsers(data);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Failed to load users.');
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -451,8 +452,8 @@ export default function UserManagementPage() {
       const action = updated.is_active === 'active' ? 'activated' : 'deactivated';
       setSuccessMsg(`${updated.first_name} ${updated.last_name} has been ${action}.`);
       setTimeout(() => setSuccessMsg(''), 4000);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Failed to update user status.');
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err));
     } finally {
       setToggling(null);
       setConfirmUser(null);

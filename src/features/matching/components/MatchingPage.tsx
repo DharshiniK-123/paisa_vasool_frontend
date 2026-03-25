@@ -8,24 +8,8 @@ import {
   fetchUnmatchedInvoicesThunk,
   setRefreshing,
 } from '../slices/matchingSlice';
-import type { DiscrepancyRecord } from '../types/Match';
 
-type MatchStatus = 'FULL' | 'PARTIAL' | 'OVERPAYMENT' | 'FAILED';
-
-type MatchRecord = {
-  id: number;
-  payment_detail_id: number;
-  invoice_id: number;
-  match_status: MatchStatus;
-  matched_amount?: number | null;
-  amount_pending?: number | null;
-  match_notes?: string | null;
-  match_reason?: string | null;
-  is_resolved?: boolean;
-  resolved_reason?: string | null;
-  created_at: string;
-  [key: string]: unknown;
-};
+import type { MatchStatus, MatchRecord } from '../types/Match';
 
 type PaymentDetail = {
   id: number;
@@ -90,6 +74,7 @@ const STATUS_CONFIG: Record<MatchStatus, { label: string; icon: React.ReactNode;
   FULL:        { label: 'Fully Paid',  icon: <IconCheck />,   bg: 'rgba(52,211,153,0.08)',  text: '#34d399', border: 'rgba(52,211,153,0.25)',  headerBg: 'rgba(52,211,153,0.06)'  },
   PARTIAL:     { label: 'Partial',     icon: <IconPartial />, bg: 'rgba(251,191,36,0.08)',  text: '#fbbf24', border: 'rgba(251,191,36,0.25)',  headerBg: 'rgba(251,191,36,0.06)'  },
   OVERPAYMENT: { label: 'Overpayment', icon: <IconOver />,    bg: 'rgba(139,92,246,0.08)',  text: '#a78bfa', border: 'rgba(139,92,246,0.25)',  headerBg: 'rgba(139,92,246,0.06)'  },
+  DUPLICATE:   { label: 'Duplicate',   icon: <IconAlert />,   bg: 'rgba(251,146,60,0.08)',  text: '#fb923c', border: 'rgba(251,146,60,0.25)', headerBg: 'rgba(251,146,60,0.06)' },
   FAILED:      { label: 'Failed',      icon: <IconFailed />,  bg: 'rgba(248,113,113,0.08)', text: '#f87171', border: 'rgba(248,113,113,0.25)', headerBg: 'rgba(248,113,113,0.06)' },
 };
 
@@ -246,7 +231,7 @@ function DetailDrawer({ match, onClose }: { match: MatchRecord; onClose: () => v
       } finally { setLoading(false); }
     };
     fetchDetails();
-  }, [match.id]);
+  }, [match.id, match.invoice_id, match.payment_detail_id]);
 
   const cfg = STATUS_CONFIG[match.match_status] ?? STATUS_CONFIG.FAILED;
   const isResolved = match.is_resolved === true;
@@ -546,7 +531,7 @@ function DiscrepanciesTab() {
     dispatch(fetchDiscrepanciesThunk(showResolved));
   }, [dispatch, showResolved]);
 
-  useEffect(() => { setPage(1); }, [search, showResolved]);
+  // page reset handled directly in event handlers
 
   const filtered = discrepancies.filter(d => {
     if (!search) return true;
@@ -590,14 +575,13 @@ function DiscrepanciesTab() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 9, padding: '0.55rem 0.875rem', flex: '1 1 200px', maxWidth: 300 }}>
           <span style={{ color: 'var(--color-muted)', flexShrink: 0 }}><IconSearch /></span>
-          <input type="text" placeholder="Search invoice, payer, reason…" value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Search invoice, payer, reason…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ background: 'none', border: 'none', outline: 'none', color: 'var(--color-text)', fontSize: '0.78rem', fontFamily: 'Outfit, sans-serif', flex: 1, minWidth: 0 }} />
-          {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex', padding: 0 }}><IconClose /></button>}
+          {search && <button onClick={() => { setSearch(''); setPage(1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex', padding: 0 }}><IconClose /></button>}
         </div>
 
-        {/* Show resolved toggle */}
         <button
-          onClick={() => setShowResolved(r => !r)}
+          onClick={() => { setShowResolved(r => !r); setPage(1); }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
             padding: '0.45rem 0.875rem', borderRadius: 8, cursor: 'pointer',
@@ -762,10 +746,16 @@ function AllMatchesTab() {
     });
   }, [matches]);
 
-  useEffect(() => { setPage(1); }, [search, activeFilters, sortDir, viewMode]);
+  useEffect(() => {
+    setTimeout(() => setPage(1), 0);
+  }, [search, activeFilters, sortDir, viewMode]);
 
   const toggleFilter = (s: MatchStatus) => {
-    setActiveFilters(prev => { const next = new Set(prev); next.has(s) ? next.delete(s) : next.add(s); return next; });
+    setActiveFilters(prev => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s); else next.add(s);
+      return next;
+    });
   };
 
   const counts = ALL_STATUSES.reduce((acc, s) => { acc[s] = matches.filter(m => m.match_status === s).length; return acc; }, {} as Record<MatchStatus, number>);
@@ -988,7 +978,6 @@ export default function MatchingPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const { discrepancies } = useAppSelector(s => s.matching);
   const dispatch = useAppDispatch();
-  const dispatch2 = useAppDispatch();
 
   // Pre-fetch discrepancy count for badge
   useEffect(() => { dispatch(fetchDiscrepanciesThunk(false)); }, [dispatch]);

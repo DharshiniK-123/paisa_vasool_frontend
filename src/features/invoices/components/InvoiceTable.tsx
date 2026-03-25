@@ -96,6 +96,14 @@ function PaymentProgress({ paid, total }: { paid?: number | null; total?: number
   );
 }
 
+const DetailRow = ({ icon, label, value, accent, danger }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: boolean; danger?: boolean }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0', borderBottom: '1px solid var(--color-border)' }}>
+    <div style={{ color: danger ? '#ef4444' : 'var(--color-muted)', flexShrink: 0, width: 16, display: 'flex', justifyContent: 'center' }}>{icon}</div>
+    <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: '0 0 90px' }}>{label}</span>
+    <span style={{ fontSize: '0.8rem', fontWeight: 500, flex: 1, color: danger ? '#ef4444' : accent ? '#60a5fa' : 'var(--color-text)', textAlign: 'right' }}>{value}</span>
+  </div>
+);
+
 // ─── Void Confirm Modal ───────────────────────────────────────────────────────
 function VoidConfirmModal({ label, onConfirm, onCancel, voiding }: {
   label: string; onConfirm: () => void; onCancel: () => void; voiding: boolean;
@@ -150,14 +158,6 @@ function InvoiceHistoryDrawer({
   const days         = daysOverdue(activeInv.due_date);
   const isVoided     = activeInv.is_deleted === true;
   const invMatches: InvoiceMatch[] = activeInv.matches ?? [];
-
-  const Row = ({ icon, label, value, accent, danger }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: boolean; danger?: boolean }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0', borderBottom: '1px solid var(--color-border)' }}>
-      <div style={{ color: 'var(--color-muted)', flexShrink: 0, width: 16, display: 'flex', justifyContent: 'center' }}>{icon}</div>
-      <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: '0 0 90px' }}>{label}</span>
-      <span style={{ fontSize: '0.8rem', fontWeight: 500, flex: 1, color: accent ? 'var(--color-accent)' : danger ? '#f87171' : 'var(--color-text)', textAlign: 'right' }}>{value}</span>
-    </div>
-  );
 
   return createPortal(
     <>
@@ -272,23 +272,23 @@ function InvoiceHistoryDrawer({
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                       <span style={{ fontSize: '0.65rem', color: 'var(--color-muted)' }}>Payment progress</span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--color-muted)' }}>{formatCurrency(activeInv.paid_amount)} of {formatCurrency(activeInv.total_amount)}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--color-muted)' }}>{formatCurrency(activeInv.paid_amount)} / {formatCurrency(activeInv.total_amount)}</span>
                     </div>
                     <PaymentProgress paid={activeInv.paid_amount} total={activeInv.total_amount} />
                   </div>
                 )}
               </div>
               <section>
-                <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-muted)', marginBottom: '0.5rem' }}>Details</p>
-                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 0.875rem' }}>
-                  <Row icon={<IconHash />}     label="Invoice #"  value={activeInv.invoice_number ?? `#${activeInv.id}`} />
-                  <Row icon={<IconUser />}     label="Customer"   value={activeInv.customer_name ?? '—'} />
-                  {activeInv.customer_email && <Row icon={<IconMail />}  label="Email" value={activeInv.customer_email} />}
-                  {activeInv.customer_phone && <Row icon={<IconPhone />} label="Phone" value={activeInv.customer_phone} />}
-                  <Row icon={<IconCurrency />} label="Total"      value={formatCurrency(activeInv.total_amount)} accent />
-                  {activeInv.paid_amount != null && <Row icon={<IconCurrency />} label="Paid" value={formatCurrency(activeInv.paid_amount)} accent />}
-                  <Row icon={<IconCalendar />} label="Invoice Dt" value={formatDate(activeInv.invoice_date)} />
-                  <Row icon={<IconCalendar />} label="Due Date"   value={formatDate(activeInv.due_date)} danger={overdue && !isVoided} />
+                <h4 style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-muted)', marginBottom: '0.75rem' }}>Invoice Details</h4>
+                <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 12, padding: '0 1.125rem' }}>
+                  <DetailRow icon={<IconHash />}     label="Invoice #"  value={activeInv.invoice_number ?? `#${activeInv.id}`} />
+                  <DetailRow icon={<IconUser />}     label="Customer"   value={activeInv.customer_name ?? '—'} />
+                  {activeInv.customer_email && <DetailRow icon={<IconMail />}  label="Email" value={activeInv.customer_email} />}
+                  {activeInv.customer_phone && <DetailRow icon={<IconPhone />} label="Phone" value={activeInv.customer_phone} />}
+                  <DetailRow icon={<IconCurrency />} label="Total"      value={formatCurrency(activeInv.total_amount)} accent />
+                  {activeInv.paid_amount != null && <DetailRow icon={<IconCurrency />} label="Paid" value={formatCurrency(activeInv.paid_amount)} accent />}
+                  <DetailRow icon={<IconCalendar />} label="Invoice Dt" value={formatDate(activeInv.invoice_date)} />
+                  <DetailRow icon={<IconCalendar />} label="Due Date"   value={formatDate(activeInv.due_date)} danger={overdue && !isVoided} />
                 </div>
               </section>
               {!isVoided && (
@@ -374,6 +374,16 @@ function InvoiceHistoryDrawer({
 // ─── Main Table ───────────────────────────────────────────────────────────────
 const ALL_STATUSES: PaymentStatus[] = ['PAID', 'UNPAID', 'PARTIAL', 'OVERPAID'];
 
+const SortTh = ({ activeKey, dir, onSort, col, label }: { activeKey: string; dir: 'asc' | 'desc'; onSort: (k: 'due_date' | 'total_amount' | 'invoice_date' | 'id') => void; col: 'due_date' | 'total_amount' | 'invoice_date' | 'id'; label: string }) => (
+    <th onClick={() => onSort(col)} style={{ padding: '0.6rem 1rem', textAlign: 'left', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: activeKey === col ? 'var(--color-accent)' : 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)', userSelect: 'none', transition: 'color 0.15s' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+        {label}
+        {activeKey === col && <span style={{ transform: dir === 'asc' ? 'rotate(180deg)' : 'none', display: 'inline-flex', transition: 'transform 0.2s' }}><IconChevronDown /></span>}
+      </span>
+    </th>
+  );
+const TH_STYLE: React.CSSProperties = { padding: '0.6rem 1rem', textAlign: 'left', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)' };
+
 export default function InvoiceTable() {
   const { invoices, loading, refreshing, error, refresh, clearError } = useInvoices();
 
@@ -414,12 +424,16 @@ export default function InvoiceTable() {
       refresh();
       setVoidTarget(null);
       setSelected(null);
-    } catch {}
+    } catch { /* ignore silently */ }
     finally { setVoiding(false); }
   };
 
   const toggleFilter = (s: PaymentStatus) => {
-    setActiveFilters(prev => { const next = new Set(prev); next.has(s) ? next.delete(s) : next.add(s); return next; });
+    setActiveFilters(prev => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s); else next.add(s);
+      return next;
+    });
     setCurrentPage(1);
   };
   const toggleSort = (key: typeof sortKey) => {
@@ -456,18 +470,6 @@ export default function InvoiceTable() {
   const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const totalAmount = activeInvoices.reduce((s, i) => s + (i.total_amount ?? 0), 0);
   const totalPaid   = activeInvoices.reduce((s, i) => s + (i.paid_amount ?? 0), 0);
-
-  const SortTh = ({ col, label }: { col: typeof sortKey; label: string }) => (
-    <th onClick={() => toggleSort(col)} style={{ padding: '0.6rem 1rem', textAlign: 'left', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: sortKey === col ? 'var(--color-accent)' : 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)', userSelect: 'none', transition: 'color 0.15s' }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-        {label}
-        {sortKey === col && <span style={{ transform: sortDir === 'asc' ? 'rotate(180deg)' : 'none', display: 'inline-flex', transition: 'transform 0.2s' }}><IconChevronDown /></span>}
-      </span>
-    </th>
-  );
-  const thStyle: React.CSSProperties = { padding: '0.6rem 1rem', textAlign: 'left', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)' };
-  const totalAmountAll = invoices.reduce((s, i) => s + (i.total_amount ?? 0), 0);
-  const totalPaidAll   = invoices.reduce((s, i) => s + (i.paid_amount ?? 0), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 1200 }}>
@@ -566,15 +568,15 @@ export default function InvoiceTable() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={thStyle}>Invoice #</th>
-                  <th style={thStyle}>Customer</th>
-                  <th style={thStyle}>Status</th>
-                  <SortTh col="total_amount"  label="Amount" />
-                  <th style={thStyle}>Progress</th>
-                  <SortTh col="invoice_date" label="Invoice Date" />
-                  <SortTh col="due_date"     label="Due Date" />
-                  <th style={thStyle}>Matched</th>
-                  <th style={thStyle}></th>
+                  <th style={TH_STYLE}>Invoice #</th>
+                  <th style={TH_STYLE}>Customer</th>
+                  <th style={TH_STYLE}>Status</th>
+                  <SortTh col="total_amount"  label="Amount" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <th style={TH_STYLE}>Progress</th>
+                  <SortTh col="invoice_date" label="Invoice Date" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortTh col="due_date"     label="Due Date" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <th style={TH_STYLE}>Matched</th>
+                  <th style={TH_STYLE}></th>
                 </tr>
               </thead>
               <tbody>

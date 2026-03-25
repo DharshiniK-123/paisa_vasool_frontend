@@ -1,5 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  type MatchStatus,
+  type MatchRecord,
+  type MatchPaymentDetail as PaymentDetail,
+  type MatchInvoiceData as InvoiceData
+} from '../../matching/types/Match';
+import { type DashboardSummary } from '../types/index';
+import { extractErrorMessage } from '../../../utils/errorUtils';
 import { ROUTES } from '../../../config/constants';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import {
@@ -10,45 +18,8 @@ import {
   fetchUnmatchedPaymentsThunk,
   fetchUnmatchedInvoicesThunk,
 } from '../../matching/slices/matchingSlice';
-import axiosInstance from '../../../lib/axios';
+import { agingConfigService } from '../../matching/services/agingConfigService';
 
-type MatchStatus = 'FULL' | 'PARTIAL' | 'OVERPAYMENT' | 'FAILED';
-
-type MatchRecord = {
-  id: number;
-  payment_detail_id: number;
-  invoice_id: number;
-  match_status: MatchStatus;
-  matched_amount?: number;
-  created_at: string;
-  [key: string]: unknown;
-};
-
-type PaymentDetail = {
-  id: number;
-  amount?: number;
-  payer_name?: string;
-  payment_date?: string;
-  reference_number?: string;
-  [key: string]: unknown;
-};
-
-type InvoiceData = {
-  id: number;
-  invoice_number?: string;
-  customer_name?: string;
-  total_amount?: number;
-  due_date?: string;
-  payment_status?: string;
-  [key: string]: unknown;
-};
-
-type DashboardSummary = {
-  FULL: MatchRecord[];
-  PARTIAL: MatchRecord[];
-  OVERPAYMENT: MatchRecord[];
-  FAILED: MatchRecord[];
-};
 
 type Discrepancy = {
   id: number;
@@ -73,7 +44,6 @@ const IconFailed     = () => (<svg width="15" height="15" viewBox="0 0 24 24" fi
 const IconUnmatched  = () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>);
 const IconArrowRight = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>);
 const IconRefresh    = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
-const IconUpload     = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>);
 const IconInvoice    = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>);
 const IconBell       = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>);
 const IconChevLeft   = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>);
@@ -163,6 +133,7 @@ const STATUS_CONFIG: Record<MatchStatus, { label: string; icon: React.ReactNode;
   FULL:        { label: 'Fully Paid',  icon: <IconCheck />,   bg: 'rgba(52,211,153,0.1)',  text: '#34d399', border: 'rgba(52,211,153,0.25)',  glow: 'rgba(52,211,153,0.08)'  },
   PARTIAL:     { label: 'Partial',     icon: <IconPartial />, bg: 'rgba(251,191,36,0.1)',  text: '#fbbf24', border: 'rgba(251,191,36,0.25)',  glow: 'rgba(251,191,36,0.06)'  },
   OVERPAYMENT: { label: 'Overpayment', icon: <IconOver />,    bg: 'rgba(139,92,246,0.1)',  text: '#a78bfa', border: 'rgba(139,92,246,0.25)',  glow: 'rgba(139,92,246,0.06)'  },
+  DUPLICATE:   { label: 'Duplicate',   icon: <IconPartial />, bg: 'rgba(139,92,246,0.1)',  text: '#a78bfa', border: 'rgba(139,92,246,0.25)',  glow: 'rgba(139,92,246,0.06)'  },
   FAILED:      { label: 'Failed',      icon: <IconFailed />,  bg: 'rgba(248,113,113,0.1)', text: '#f87171', border: 'rgba(248,113,113,0.25)', glow: 'rgba(248,113,113,0.06)' },
 };
 
@@ -180,10 +151,10 @@ function SummaryCards({ summary, loading }: { summary: DashboardSummary | null; 
   const navigate = useNavigate();
   const total = summary ? Object.values(summary).reduce((acc, arr) => acc + arr.length, 0) : 0;
   const cards = [
-    { key: 'FULL' as MatchStatus,        label: 'Fully Paid',     count: summary?.FULL.length ?? 0,        amount: summary?.FULL.reduce((s, m) => s + (m.matched_amount ?? 0), 0) ?? 0,        icon: <IconCheck /> },
-    { key: 'PARTIAL' as MatchStatus,     label: 'Partially Paid', count: summary?.PARTIAL.length ?? 0,     amount: summary?.PARTIAL.reduce((s, m) => s + (m.matched_amount ?? 0), 0) ?? 0,     icon: <IconPartial /> },
-    { key: 'OVERPAYMENT' as MatchStatus, label: 'Overpayment',    count: summary?.OVERPAYMENT.length ?? 0, amount: summary?.OVERPAYMENT.reduce((s, m) => s + (m.matched_amount ?? 0), 0) ?? 0, icon: <IconOver /> },
-    { key: 'FAILED' as MatchStatus,      label: 'Failed',         count: summary?.FAILED.length ?? 0,      amount: 0,                                                                           icon: <IconFailed /> },
+    { key: 'FULL' as MatchStatus,        label: 'Fully Paid',     count: summary?.FULL?.length ?? 0,        amount: summary?.FULL?.reduce((s, m) => s + (m.matched_amount ?? 0), 0) ?? 0,        icon: <IconCheck /> },
+    { key: 'PARTIAL' as MatchStatus,     label: 'Partially Paid', count: summary?.PARTIAL?.length ?? 0,     amount: summary?.PARTIAL?.reduce((s, m) => s + (m.matched_amount ?? 0), 0) ?? 0,     icon: <IconPartial /> },
+    { key: 'OVERPAYMENT' as MatchStatus, label: 'Overpayment',    count: summary?.OVERPAYMENT?.length ?? 0, amount: summary?.OVERPAYMENT?.reduce((s, m) => s + (m.matched_amount ?? 0), 0) ?? 0, icon: <IconOver /> },
+    { key: 'FAILED' as MatchStatus,      label: 'Failed',         count: summary?.FAILED?.length ?? 0,      amount: 0,                                                                           icon: <IconFailed /> },
   ];
   return (
     <div>
@@ -234,7 +205,6 @@ function UnmatchedSection({ unmatchedPayments, unmatchedInvoices, loading }: {
   unmatchedInvoices: InvoiceData[];
   loading: boolean;
 }) {
-  const navigate = useNavigate();
   const [tab, setTab]   = useState<'payments' | 'invoices'>('payments');
   const [page, setPage] = useState(1);
 
@@ -452,12 +422,10 @@ function DiscrepanciesPanel() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axiosInstance.get(
-        `/api/v1/payment_intake_matching/matching/dashboard/discrepancies?include_resolved=${includeResolved}`
-      );
-      setItems(res.data);
-    } catch {
-      setError('Could not load discrepancies.');
+      const data = await agingConfigService.getDiscrepancies(includeResolved);
+      setItems(data as unknown as Discrepancy[]);
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -637,28 +605,28 @@ function DiscrepanciesPanel() {
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { summary, recentMatches, loading, error } = useAppSelector(s => s.dashboard);
   const { unmatchedPayments, unmatchedInvoices }    = useAppSelector(s => s.matching);
 
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [refreshing, setRefreshing]   = useState(false);
 
-  const fetchAll = (silent = false) => {
-    if (silent) setRefreshing(true);
+  // Use useCallback to prevent infinite loops in useEffect
+  const fetchAll = useCallback((silent = false) => {
+    if (silent) setTimeout(() => setRefreshing(true), 0);
     dispatch(fetchDashboardSummaryThunk());
     dispatch(fetchRecentMatchesThunk());
     dispatch(fetchUnmatchedPaymentsThunk());
     dispatch(fetchUnmatchedInvoicesThunk());
-    setLastRefresh(new Date());
+    setTimeout(() => setLastRefresh(new Date()), 0);
     if (silent) setTimeout(() => setRefreshing(false), 1000);
-  };
+  }, [dispatch]);
 
-  useEffect(() => { fetchAll(); }, [dispatch]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => {
     const t = setInterval(() => fetchAll(true), 60000);
     return () => clearInterval(t);
-  }, []);
+  }, [fetchAll]);
 
   const totalUnmatched = unmatchedPayments.length + unmatchedInvoices.length;
 

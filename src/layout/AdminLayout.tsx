@@ -191,7 +191,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-accent)' }}>
-                {((user as any).email?.[0] ?? 'A').toUpperCase()}
+                {((user as { email?: string }).email?.[0] ?? 'A').toUpperCase()}
               </span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -200,7 +200,7 @@ function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                 color: 'var(--color-text)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
-                {(user as any).email}
+                {(user as { email?: string }).email}
               </p>
               <p style={{ fontSize: '0.62rem', color: 'var(--color-accent)', fontWeight: 600 }}>Admin</p>
             </div>
