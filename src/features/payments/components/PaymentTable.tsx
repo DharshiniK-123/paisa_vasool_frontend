@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePayments } from '../hooks/usePayments';
+import { paymentService } from '../services/paymentService';
 import InlineUploadPanel from '../../documents/components/InlineUploadPanel';
 import type { Payment } from '../types/Payment';
 import Pagination from '../../../components/common/Pagination';

@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
-import {fetchMatchesThunk,fetchDiscrepanciesThunk,fetchUnmatchedPaymentsThunk,fetchUnmatchedInvoicesThunk,setRefreshing,} from '../slices/matchingSlice';
+import {
+  fetchMatchesThunk,
+  fetchDiscrepanciesThunk,
+  fetchUnmatchedPaymentsThunk,
+  fetchUnmatchedInvoicesThunk,
+  setRefreshing,
+} from '../slices/matchingSlice';
 import type { DiscrepancyRecord } from '../types/Match';
 
 type MatchStatus = 'FULL' | 'PARTIAL' | 'OVERPAYMENT' | 'FAILED';
@@ -303,6 +309,7 @@ function DetailDrawer({ match, onClose }: { match: MatchRecord; onClose: () => v
             </div>
           </div>
 
+          {/* Resolved reason banner */}
           {isResolved && match.resolved_reason && (
             <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 10, padding: '0.875rem 1rem', display: 'flex', gap: '0.625rem' }}>
               <span style={{ color: '#34d399', flexShrink: 0, marginTop: '0.1rem' }}><IconResolved /></span>
@@ -313,6 +320,7 @@ function DetailDrawer({ match, onClose }: { match: MatchRecord; onClose: () => v
             </div>
           )}
 
+          {/* Match reason / notes */}
           {(match.match_reason || match.match_notes) && (
             <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0.875rem 1rem', display: 'flex', gap: '0.625rem' }}>
               <span style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '0.1rem' }}><IconNote /></span>
@@ -523,6 +531,7 @@ function MatchTableRow({ match, onSelect, index, cache }: { match: MatchRecord; 
 }
 
 
+// ─── Discrepancies Tab ────────────────────────────────────────────────────────
 
 function DiscrepanciesTab() {
   const dispatch = useAppDispatch();
@@ -565,6 +574,7 @@ function DiscrepanciesTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
+      {/* Summary pills */}
       <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.875rem', borderRadius: 10, background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.2)' }}>
           <IconAlert />
@@ -576,6 +586,7 @@ function DiscrepanciesTab() {
         </div>
       </div>
 
+      {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 9, padding: '0.55rem 0.875rem', flex: '1 1 200px', maxWidth: 300 }}>
           <span style={{ color: 'var(--color-muted)', flexShrink: 0 }}><IconSearch /></span>
@@ -584,6 +595,7 @@ function DiscrepanciesTab() {
           {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex', padding: 0 }}><IconClose /></button>}
         </div>
 
+        {/* Show resolved toggle */}
         <button
           onClick={() => setShowResolved(r => !r)}
           style={{
@@ -605,6 +617,7 @@ function DiscrepanciesTab() {
         </button>
       </div>
 
+      {/* Table */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
         {discrepanciesLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '3.5rem' }}><Spinner /></div>
@@ -710,6 +723,7 @@ function DiscrepanciesTab() {
 }
 
 
+// ─── All Matches Tab ──────────────────────────────────────────────────────────
 
 function AllMatchesTab() {
   const dispatch = useAppDispatch();
@@ -878,6 +892,7 @@ function AllMatchesTab() {
 }
 
 
+// ─── Unmatched Tab ────────────────────────────────────────────────────────────
 
 function UnmatchedTab({ type }: { type: 'payments' | 'invoices' }) {
   const dispatch = useAppDispatch();
@@ -965,6 +980,7 @@ function UnmatchedTab({ type }: { type: 'payments' | 'invoices' }) {
 }
 
 
+// ─── Root Page ────────────────────────────────────────────────────────────────
 
 type TabKey = 'all' | 'discrepancies' | 'unmatched-payments' | 'unmatched-invoices';
 
@@ -974,6 +990,7 @@ export default function MatchingPage() {
   const dispatch = useAppDispatch();
   const dispatch2 = useAppDispatch();
 
+  // Pre-fetch discrepancy count for badge
   useEffect(() => { dispatch(fetchDiscrepanciesThunk(false)); }, [dispatch]);
 
   const openDiscrepancyCount = discrepancies.filter(d => !d.is_resolved).length;
