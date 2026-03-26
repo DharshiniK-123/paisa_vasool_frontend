@@ -252,15 +252,7 @@ function AdminTopBar() {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)' }}>{dateStr}</span>
-        <div className="session-badge">
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: 'var(--color-accent)', display: 'inline-block',
-            boxShadow: '0 0 6px var(--color-accent)',
-            animation: 'pulseSlow 2s ease-in-out infinite',
-          }} />
-          Live
-        </div>
+        
       </div>
     </header>
   );
