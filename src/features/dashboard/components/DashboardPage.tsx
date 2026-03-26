@@ -403,20 +403,18 @@ function QuickActions() {
     </div>
   );
 }
-
 function DiscrepanciesPanel() {
-  const [items, setItems]           = useState<Discrepancy[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [expanded, setExpanded]     = useState<number | null>(null);
-  const [showResolved, setShowResolved] = useState(false);
-  const [page, setPage]             = useState(1);
+  const [items, setItems]       = useState<Discrepancy[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [page, setPage]         = useState(1);
 
-  const load = async (includeResolved: boolean) => {
+  const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await agingConfigService.getDiscrepancies(includeResolved);
+      const data = await agingConfigService.getDiscrepancies(false);
       setItems(data as unknown as Discrepancy[]);
     } catch (err: unknown) {
       setError(extractErrorMessage(err));
@@ -425,17 +423,14 @@ function DiscrepanciesPanel() {
     }
   };
 
-  useEffect(() => { load(showResolved); }, [showResolved]);
+  useEffect(() => { load(); }, []);
 
-  const handleToggle = () => { setShowResolved(r => !r); setPage(1); setExpanded(null); };
-
-  const openCount     = items.filter(d => !d.is_resolved).length;
-  const resolvedCount = items.filter(d => d.is_resolved).length;
-  const paged         = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const openCount = items.filter(d => !d.is_resolved).length;
+  const paged     = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden' }}>
-    
+
       <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.625rem', background: 'var(--color-surface-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171', fontSize: '0.75rem' }}>⚠</div>
@@ -445,28 +440,12 @@ function DiscrepanciesPanel() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-        
-          {!loading && (
-            <>
-              {openCount > 0 && (
-                <span style={{ padding: '0.15rem 0.55rem', borderRadius: 99, fontSize: '0.62rem', fontWeight: 700, background: 'rgba(248,113,113,0.1)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)' }}>
-                  {openCount} open
-                </span>
-              )}
-              {resolvedCount > 0 && (
-                <span style={{ padding: '0.15rem 0.55rem', borderRadius: 99, fontSize: '0.62rem', fontWeight: 700, background: 'rgba(52,211,153,0.08)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-                  {resolvedCount} resolved
-                </span>
-              )}
-            </>
+          {!loading && openCount > 0 && (
+            <span style={{ padding: '0.15rem 0.55rem', borderRadius: 99, fontSize: '0.62rem', fontWeight: 700, background: 'rgba(248,113,113,0.1)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)' }}>
+              {openCount} open
+            </span>
           )}
-        
-          <button onClick={handleToggle}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.65rem', borderRadius: 7, cursor: 'pointer', fontSize: '0.68rem', fontWeight: 600, fontFamily: 'Outfit, sans-serif', border: showResolved ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--color-border)', background: showResolved ? 'rgba(52,211,153,0.08)' : 'var(--color-surface)', color: showResolved ? '#34d399' : 'var(--color-muted)', transition: 'all 0.15s' }}>
-            <IconResolved /> {showResolved ? 'Hide resolved' : 'Show resolved'}
-          </button>
-       
-          <button onClick={() => load(showResolved)}
+          <button onClick={() => load()}
             style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: 7, padding: '0.35rem', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex' }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--color-text)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--color-muted)'}
@@ -493,41 +472,32 @@ function DiscrepanciesPanel() {
         <>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {paged.map((item, i) => {
-              const isResolved = item.is_resolved;
-              const color  = isResolved ? '#34d399' : (item.match_status === 'FAILED' ? '#f87171' : '#fbbf24');
-              const bg     = isResolved ? 'rgba(52,211,153,0.06)' : (item.match_status === 'FAILED' ? 'rgba(248,113,113,0.06)' : 'rgba(251,191,36,0.06)');
-              const border = isResolved ? 'rgba(52,211,153,0.15)' : (item.match_status === 'FAILED' ? 'rgba(248,113,113,0.15)' : 'rgba(251,191,36,0.15)');
+              const color  = item.match_status === 'FAILED' ? '#f87171' : '#fbbf24';
+              const bg     = item.match_status === 'FAILED' ? 'rgba(248,113,113,0.06)' : 'rgba(251,191,36,0.06)';
+              const border = item.match_status === 'FAILED' ? 'rgba(248,113,113,0.15)' : 'rgba(251,191,36,0.15)';
               const isOpen = expanded === item.id;
 
               return (
-                <div key={item.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--color-border)' : 'none', opacity: isResolved ? 0.75 : 1 }}>
+                <div key={item.id} style={{ borderBottom: i < paged.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
                   <div onClick={() => setExpanded(isOpen ? null : item.id)}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.875rem 1.25rem', cursor: 'pointer', background: isOpen ? bg : 'transparent', transition: 'background 0.15s' }}
                     onMouseEnter={e => { if (!isOpen) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
                     onMouseLeave={e => { if (!isOpen) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                  
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flexShrink: 0 }}>
-                      <span style={{ padding: '0.15rem 0.5rem', borderRadius: 99, fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: `${color}18`, color, border: `1px solid ${color}33` }}>
-                        {item.match_status}
-                      </span>
-                      {isResolved && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.12rem 0.4rem', borderRadius: 99, fontSize: '0.55rem', fontWeight: 700, background: 'rgba(52,211,153,0.1)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}>
-                          <IconResolved /> Resolved
-                        </span>
-                      )}
-                    </div>
-                   
+                    <span style={{ padding: '0.15rem 0.5rem', borderRadius: 99, fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: `${color}18`, color, border: `1px solid ${color}33`, flexShrink: 0 }}>
+                      {item.match_status}
+                    </span>
+
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.payer_name ?? item.payer_email ?? 'Unknown payer'}
                         {item.invoice_no && <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}> · {item.invoice_no}</span>}
                       </p>
-                      <p style={{ fontSize: '0.68rem', color: isResolved ? '#34d399' : 'var(--color-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {isResolved && item.resolved_reason ? `✓ ${item.resolved_reason}` : (item.match_reason ?? '—')}
+                      <p style={{ fontSize: '0.68rem', color: 'var(--color-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.match_reason ?? '—'}
                       </p>
                     </div>
-                 
+
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text)' }}>
                         {item.payment_amount != null ? formatCurrency(item.payment_amount, item.currency) : '—'}
@@ -536,29 +506,16 @@ function DiscrepanciesPanel() {
                         {item.paid_date ? new Date(item.paid_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                       </p>
                     </div>
+
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                       style={{ flexShrink: 0, color: 'var(--color-muted)', transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
                   </div>
 
-                
                   {isOpen && (
                     <div style={{ padding: '0.75rem 1.25rem 1.125rem', background: bg, borderTop: `1px solid ${border}` }}>
-                    
-                      {isResolved && item.resolved_reason && (
-                        <div style={{ marginBottom: '0.875rem', padding: '0.625rem 0.875rem', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 8, display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                          <span style={{ color: '#34d399', flexShrink: 0, marginTop: '0.1rem' }}><IconResolved /></span>
-                          <div>
-                            <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#34d399', fontWeight: 700, marginBottom: '0.25rem' }}>RESOLVED</p>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--color-text)', lineHeight: 1.6 }}>{item.resolved_reason}</p>
-                          </div>
-                        </div>
-                      )}
-                  
-                      <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color, marginBottom: '0.4rem' }}>
-                        {isResolved ? 'Original Reason' : 'Reason'}
-                      </p>
+                      <p style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color, marginBottom: '0.4rem' }}>Reason</p>
                       <p style={{ fontSize: '0.78rem', color: 'var(--color-text)', lineHeight: 1.65 }}>
                         {item.match_reason ?? 'No reason recorded.'}
                       </p>

@@ -46,7 +46,8 @@ function timeAgo(str?: string | null) {
   return `${Math.floor(h / 24)}d ago`;
 }
 function isOverdue(due?: string | null, status?: string | null) {
-  if (!due || normaliseStatus(status) === 'PAID') return false;
+  const s = normaliseStatus(status);
+  if (!due || s === 'PAID' || s === 'OVERPAID') return false;
   return new Date(due) < new Date();
 }
 function daysOverdue(due?: string | null) {

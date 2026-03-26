@@ -294,7 +294,6 @@ function DetailDrawer({ match, onClose }: { match: MatchRecord; onClose: () => v
             </div>
           </div>
 
-          {/* Resolved reason banner */}
           {isResolved && match.resolved_reason && (
             <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 10, padding: '0.875rem 1rem', display: 'flex', gap: '0.625rem' }}>
               <span style={{ color: '#34d399', flexShrink: 0, marginTop: '0.1rem' }}><IconResolved /></span>
@@ -305,7 +304,6 @@ function DetailDrawer({ match, onClose }: { match: MatchRecord; onClose: () => v
             </div>
           )}
 
-          {/* Match reason / notes */}
           {(match.match_reason || match.match_notes) && (
             <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0.875rem 1rem', display: 'flex', gap: '0.625rem' }}>
               <span style={{ color: 'var(--color-muted)', flexShrink: 0, marginTop: '0.1rem' }}><IconNote /></span>
@@ -516,22 +514,18 @@ function MatchTableRow({ match, onSelect, index, cache }: { match: MatchRecord; 
 }
 
 
-// ─── Discrepancies Tab ────────────────────────────────────────────────────────
 
 function DiscrepanciesTab() {
   const dispatch = useAppDispatch();
   const { discrepancies, discrepanciesLoading } = useAppSelector(s => s.matching);
-  const [showResolved, setShowResolved] = useState(false);
   const [search, setSearch]             = useState('');
   const [page, setPage]                 = useState(1);
   const [pageSize, setPageSize]         = useState(25);
   const [selectedDisc, setSelectedDisc] = useState<MatchRecord | null>(null);
 
   useEffect(() => {
-    dispatch(fetchDiscrepanciesThunk(showResolved));
-  }, [dispatch, showResolved]);
-
-  // page reset handled directly in event handlers
+    dispatch(fetchDiscrepanciesThunk(false));
+  }, [dispatch]);
 
   const filtered = discrepancies.filter(d => {
     if (!search) return true;
@@ -547,7 +541,6 @@ function DiscrepanciesTab() {
 
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
   const unresolvedCount = discrepancies.filter(d => !d.is_resolved).length;
-  const resolvedCount   = discrepancies.filter(d => d.is_resolved).length;
 
   const thStyle: React.CSSProperties = {
     padding: '0.6rem 1rem', textAlign: 'left', fontSize: '0.6rem', fontWeight: 600,
@@ -559,19 +552,13 @@ function DiscrepanciesTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-      {/* Summary pills */}
       <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.875rem', borderRadius: 10, background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.2)' }}>
           <IconAlert />
           <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#f87171' }}>{unresolvedCount} Open</span>
         </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.875rem', borderRadius: 10, background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.2)' }}>
-          <IconResolved />
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#34d399' }}>{resolvedCount} Resolved</span>
-        </div>
       </div>
 
-      {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 9, padding: '0.55rem 0.875rem', flex: '1 1 200px', maxWidth: 300 }}>
           <span style={{ color: 'var(--color-muted)', flexShrink: 0 }}><IconSearch /></span>
@@ -580,37 +567,21 @@ function DiscrepanciesTab() {
           {search && <button onClick={() => { setSearch(''); setPage(1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', display: 'flex', padding: 0 }}><IconClose /></button>}
         </div>
 
-        <button
-          onClick={() => { setShowResolved(r => !r); setPage(1); }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.45rem 0.875rem', borderRadius: 8, cursor: 'pointer',
-            fontSize: '0.72rem', fontWeight: 600, fontFamily: 'Outfit, sans-serif',
-            border: showResolved ? '1px solid rgba(52,211,153,0.35)' : '1px solid var(--color-border)',
-            background: showResolved ? 'rgba(52,211,153,0.08)' : 'var(--color-surface)',
-            color: showResolved ? '#34d399' : 'var(--color-muted)',
-            transition: 'all 0.15s',
-          }}
-        >
-          <IconResolved /> {showResolved ? 'Hiding resolved' : 'Show resolved'}
-        </button>
-
-        <button onClick={() => dispatch(fetchDiscrepanciesThunk(showResolved))}
+        <button onClick={() => dispatch(fetchDiscrepanciesThunk(false))}
           style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.75rem', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: 'pointer', color: 'var(--color-muted)', fontSize: '0.7rem', fontFamily: 'Outfit, sans-serif', transition: 'all 0.15s' }}>
           {discrepanciesLoading ? <Spinner size={13} /> : <IconRefresh />}
         </button>
       </div>
 
-      {/* Table */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
         {discrepanciesLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '3.5rem' }}><Spinner /></div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '3.5rem', textAlign: 'center' }}>
             <p style={{ fontSize: '0.82rem', color: 'var(--color-muted)', marginBottom: '0.3rem' }}>
-              {search ? 'No results found' : unresolvedCount === 0 ? '🎉 No open discrepancies!' : 'No records'}
+              {search ? 'No results found' : '🎉 No open discrepancies!'}
             </p>
-            {!search && unresolvedCount === 0 && (
+            {!search && (
               <p style={{ fontSize: '0.72rem', color: 'var(--color-faint)' }}>All discrepancies have been resolved.</p>
             )}
           </div>
@@ -631,7 +602,6 @@ function DiscrepanciesTab() {
               <tbody>
                 {paginated.map((d, i) => {
                   const dcfg = DISC_STATUS_CONFIG[d.match_status] ?? DISC_STATUS_CONFIG.FAILED;
-                  const isResolved = d.is_resolved;
                   return (
                     <tr key={d.id}
                       onClick={() => setSelectedDisc({
@@ -645,17 +615,14 @@ function DiscrepanciesTab() {
                         resolved_reason: d.resolved_reason,
                         created_at: d.created_at,
                       })}
-                      style={{ borderBottom: i < paginated.length - 1 ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', transition: 'background 0.15s', opacity: isResolved ? 0.65 : 1, animation: `fadeSlideUp 0.3s var(--ease-out-expo) ${Math.min(i, 15) * 0.025}s both` }}
+                      style={{ borderBottom: i < paginated.length - 1 ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', transition: 'background 0.15s', animation: `fadeSlideUp 0.3s var(--ease-out-expo) ${Math.min(i, 15) * 0.025}s both` }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-2)'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                     >
                       <td style={tdStyle}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: 99, fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: dcfg.bg, color: dcfg.text, border: `1px solid ${dcfg.border}` }}>
-                            {dcfg.icon} {dcfg.label}
-                          </span>
-                          {isResolved && <ResolvedBadge />}
-                        </div>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: 99, fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', background: dcfg.bg, color: dcfg.text, border: `1px solid ${dcfg.border}` }}>
+                          {dcfg.icon} {dcfg.label}
+                        </span>
                       </td>
                       <td style={{ ...tdStyle, color: 'var(--color-accent)', fontWeight: 500 }}>{d.invoice_no ?? '—'}</td>
                       <td style={tdStyle}>
@@ -668,15 +635,9 @@ function DiscrepanciesTab() {
                         {formatCurrency(d.payment_amount, d.currency)}
                       </td>
                       <td style={{ padding: '0.75rem 1rem', maxWidth: 280 }}>
-                        {isResolved && d.resolved_reason ? (
-                          <p style={{ fontSize: '0.72rem', color: '#34d399', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                            ✓ {d.resolved_reason}
-                          </p>
-                        ) : (
-                          <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                            {d.match_reason ?? '—'}
-                          </p>
-                        )}
+                        <p style={{ fontSize: '0.72rem', color: 'var(--color-muted)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {d.match_reason ?? '—'}
+                        </p>
                       </td>
                       <td style={{ ...tdStyle, color: 'var(--color-muted)' }}>
                         <div>
@@ -685,7 +646,7 @@ function DiscrepanciesTab() {
                         </div>
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', fontWeight: 600, color: isResolved ? '#34d399' : dcfg.text, background: isResolved ? 'rgba(52,211,153,0.08)' : dcfg.bg, border: `1px solid ${isResolved ? 'rgba(52,211,153,0.25)' : dcfg.border}`, borderRadius: 99, padding: '0.2rem 0.6rem', cursor: 'pointer' }}>View →</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', fontWeight: 600, color: dcfg.text, background: dcfg.bg, border: `1px solid ${dcfg.border}`, borderRadius: 99, padding: '0.2rem 0.6rem', cursor: 'pointer' }}>View →</span>
                       </td>
                     </tr>
                   );
@@ -705,9 +666,6 @@ function DiscrepanciesTab() {
     </div>
   );
 }
-
-
-// ─── All Matches Tab ──────────────────────────────────────────────────────────
 
 function AllMatchesTab() {
   const dispatch = useAppDispatch();
@@ -882,7 +840,6 @@ function AllMatchesTab() {
 }
 
 
-// ─── Unmatched Tab ────────────────────────────────────────────────────────────
 
 function UnmatchedTab({ type }: { type: 'payments' | 'invoices' }) {
   const dispatch = useAppDispatch();
@@ -970,7 +927,6 @@ function UnmatchedTab({ type }: { type: 'payments' | 'invoices' }) {
 }
 
 
-// ─── Root Page ────────────────────────────────────────────────────────────────
 
 type TabKey = 'all' | 'discrepancies' | 'unmatched-payments' | 'unmatched-invoices';
 
@@ -979,7 +935,6 @@ export default function MatchingPage() {
   const { discrepancies } = useAppSelector(s => s.matching);
   const dispatch = useAppDispatch();
 
-  // Pre-fetch discrepancy count for badge
   useEffect(() => { dispatch(fetchDiscrepanciesThunk(false)); }, [dispatch]);
 
   const openDiscrepancyCount = discrepancies.filter(d => !d.is_resolved).length;
