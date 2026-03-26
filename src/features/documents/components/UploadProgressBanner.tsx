@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
-import { reset as resetProgress, requestReview } from '../slices/Uploadprogresslice';
+import { reset as resetProgress, requestReview } from '../slices/UploadProgressSlice';
 import { ROUTES } from '../../../config/constants';
 
 function Spinner() {
@@ -29,14 +29,17 @@ export default function UploadProgressBanner() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (status === 'idle') {
-      setFadeOut(false);
-      setVisible(false);
-      return;
-    }
+    setTimeout(() => {
+      if (status === 'idle') {
+        setFadeOut(false);
+        setVisible(false);
+      } else {
+        setFadeOut(false);
+        setVisible(true);
+      }
+    }, 0);
 
-    setFadeOut(false);
-    setVisible(true);
+    if (status === 'idle') return;
 
     if (timerRef.current) clearTimeout(timerRef.current);
 
@@ -119,6 +122,7 @@ export default function UploadProgressBanner() {
         <div style={{ flexShrink: 0, color }}>
           {isWorking || isSaving ? <Spinner /> : isFailed ? '⚠' : '✓'}
         </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {fileName ?? 'Document'}

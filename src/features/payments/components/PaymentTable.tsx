@@ -18,9 +18,6 @@ const IconCalendar    = () => (<svg width="13" height="13" viewBox="0 0 24 24" f
 const IconBank        = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>);
 const IconMode        = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>);
 const IconNote        = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>);
-const IconTrash       = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>);
-const IconCheck       = () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>);
-
 
 function Spinner({ size = 18, color = 'var(--color-accent)' }: { size?: number; color?: string }) {
   return <div style={{ width: size, height: size, borderRadius: '50%', border: `2px solid ${color}22`, borderTopColor: color, animation: 'spin 0.65s linear infinite', flexShrink: 0 }} />;
@@ -34,6 +31,7 @@ function formatDate(str?: string | null) {
   const d = new Date(str);
   return isNaN(d.getTime()) ? str : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
 
 const MODE_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   UPI:    { label: 'UPI',    bg: 'rgba(52,211,153,0.1)',   text: '#34d399', border: 'rgba(52,211,153,0.25)'  },
@@ -54,15 +52,16 @@ function ModeBadge({ mode }: { mode?: string | null }) {
 
 
 
-function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => void }) {
-  const KNOWN_KEYS = ['id','payer_name','payer_email','payer_phone','amount','payment_date','reference_number','bank_name','payment_mode','notes','document_id','customer_id','updated_at','created_at'];
-  const Row = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: boolean }) => (
+const PaymentDetailRow = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: boolean }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0', borderBottom: '1px solid var(--color-border)' }}>
       <div style={{ color: 'var(--color-muted)', flexShrink: 0, width: 16, display: 'flex', justifyContent: 'center' }}>{icon}</div>
       <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', flex: '0 0 90px' }}>{label}</span>
       <span style={{ fontSize: '0.8rem', fontWeight: 500, flex: 1, color: accent ? '#60a5fa' : 'var(--color-text)', textAlign: 'right' }}>{value}</span>
     </div>
   );
+
+function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => void }) {
+  const KNOWN_KEYS = ['id','payer_name','payer_email','payer_phone','amount','payment_date','reference_number','bank_name','payment_mode','notes','document_id','customer_id','updated_at','created_at'];
   const extraFields = Object.entries(payment).filter(([k]) => !KNOWN_KEYS.includes(k) && payment[k] != null && String(payment[k]).trim() !== '');
   return (
     <>
@@ -93,19 +92,19 @@ function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => 
           <section>
             <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-muted)', marginBottom: '0.5rem' }}>Payer Information</p>
             <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 0.875rem' }}>
-              <Row icon={<IconUser />} label="Payer" value={payment.payer_name ?? '—'} />
-              {payment.payer_email && <Row icon={<IconMail />} label="Email" value={payment.payer_email} />}
-              {payment.payer_phone && <Row icon={<IconPhone />} label="Phone" value={payment.payer_phone} />}
+              <PaymentDetailRow icon={<IconUser />} label="Payer" value={payment.payer_name ?? '—'} />
+              {payment.payer_email && <PaymentDetailRow icon={<IconMail />} label="Email" value={payment.payer_email} />}
+              {payment.payer_phone && <PaymentDetailRow icon={<IconPhone />} label="Phone" value={payment.payer_phone} />}
             </div>
           </section>
           <section>
             <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-muted)', marginBottom: '0.5rem' }}>Transaction</p>
             <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 0.875rem' }}>
-              <Row icon={<IconCurrency />} label="Amount"    value={formatCurrency(payment.amount)} accent />
-              <Row icon={<IconCalendar />} label="Date"      value={formatDate(payment.payment_date)} />
-              {payment.reference_number && <Row icon={<IconHash />} label="Reference" value={payment.reference_number} />}
-              {payment.bank_name         && <Row icon={<IconBank />} label="Bank"      value={payment.bank_name} />}
-              {payment.payment_mode      && <Row icon={<IconMode />} label="Mode"      value={<ModeBadge mode={payment.payment_mode} />} />}
+              <PaymentDetailRow icon={<IconCurrency />} label="Amount"    value={formatCurrency(payment.amount)} accent />
+              <PaymentDetailRow icon={<IconCalendar />} label="Date"      value={formatDate(payment.payment_date)} />
+              {payment.reference_number && <PaymentDetailRow icon={<IconHash />} label="Reference" value={payment.reference_number} />}
+              {payment.bank_name         && <PaymentDetailRow icon={<IconBank />} label="Bank"      value={payment.bank_name} />}
+              {payment.payment_mode      && <PaymentDetailRow icon={<IconMode />} label="Mode"      value={<ModeBadge mode={payment.payment_mode} />} />}
             </div>
           </section>
           {payment.notes && (
@@ -121,7 +120,7 @@ function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => 
             <section>
               <p style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-muted)', marginBottom: '0.5rem' }}>Additional Fields</p>
               <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 10, padding: '0 0.875rem' }}>
-                {extraFields.map(([k, v]) => <Row key={k} icon={<IconHash />} label={k.replace(/_/g, ' ')} value={String(v)} />)}
+                {extraFields.map(([k, v]) => <PaymentDetailRow key={k} icon={<IconHash />} label={k.replace(/_/g, ' ')} value={String(v)} />)}
               </div>
             </section>
           )}
@@ -132,13 +131,21 @@ function PaymentDrawer({ payment, onClose }: { payment: Payment; onClose: () => 
   );
 }
 
+const PAYMENT_TH_STYLE: React.CSSProperties = { padding: '0.6rem 1rem', textAlign: 'left', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)' };
 
+const PaymentSortTh = ({ activeKey, dir, onSort, col, label }: { activeKey: string; dir: 'asc' | 'desc'; onSort: (k: 'amount' | 'payment_date' | 'id') => void; col: 'amount' | 'payment_date' | 'id'; label: string }) => (
+  <th onClick={() => onSort(col)} style={{ padding: '0.6rem 1rem', textAlign: 'left', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: activeKey === col ? '#60a5fa' : 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)', userSelect: 'none', transition: 'color 0.15s' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+      {label}
+      {activeKey === col && <span style={{ transform: dir === 'asc' ? 'rotate(180deg)' : 'none', display: 'inline-flex', transition: 'transform 0.2s' }}><IconChevronDown /></span>}
+    </span>
+  </th>
+);
 
 export default function PaymentTable() {
   const { payments, loading, refreshing, error, refresh, clearError } = usePayments();
 
   const [selected, setSelected]         = useState<Payment | null>(null);
-  const [deleting, setDeleting]         = useState(false);
   const [search, setSearch]             = useState('');
   const [modeFilter, setModeFilter]     = useState<string | null>(null);
   const [sortKey, setSortKey]           = useState<'amount' | 'payment_date' | 'id'>('id');
@@ -177,16 +184,6 @@ export default function PaymentTable() {
   const totalReceived = payments.reduce((s, p) => s + (p.amount ?? 0), 0);
   const avgPayment    = payments.length ? totalReceived / payments.length : 0;
   const maxPayment    = payments.reduce((m, p) => Math.max(m, p.amount ?? 0), 0);
-
-  const SortTh = ({ col, label }: { col: typeof sortKey; label: string }) => (
-    <th onClick={() => toggleSort(col)} style={{ padding: '0.6rem 1rem', textAlign: 'left', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: sortKey === col ? '#60a5fa' : 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)', userSelect: 'none', transition: 'color 0.15s' }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-        {label}
-        {sortKey === col && <span style={{ transform: sortDir === 'asc' ? 'rotate(180deg)' : 'none', display: 'inline-flex', transition: 'transform 0.2s' }}><IconChevronDown /></span>}
-      </span>
-    </th>
-  );
-  const thStyle: React.CSSProperties = { padding: '0.6rem 1rem', textAlign: 'left', fontSize: '0.6rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 1200 }}>
@@ -275,11 +272,11 @@ export default function PaymentTable() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <th style={thStyle}>Ref / ID</th>
-                  <th style={thStyle}>Payer</th>
-                  <SortTh col="amount" label="Amount" />
-                  <SortTh col="payment_date" label="Date" />
-                  <th style={thStyle}></th>
+                  <th style={PAYMENT_TH_STYLE}>Ref / ID</th>
+                  <th style={PAYMENT_TH_STYLE}>Payer</th>
+                  <PaymentSortTh col="amount" label="Amount" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <PaymentSortTh col="payment_date" label="Date" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <th style={PAYMENT_TH_STYLE}></th>
                 </tr>
               </thead>
               <tbody>
