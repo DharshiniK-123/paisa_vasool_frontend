@@ -705,7 +705,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
                 }}>
                   {(user as { email?: string }).email}
                 </p>
-                <p style={{ fontSize: '0.62rem', color: 'var(--color-muted)' }}>Operator</p>
+                <p style={{ fontSize: '0.62rem', color: 'var(--color-muted)' }}>Finance Associate</p>
               </div>
             </div>
           )}
@@ -727,7 +727,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = 'var(--color-muted)'; el.style.borderColor = 'transparent'; }}
           >
             <span style={{ flexShrink: 0, display: 'flex' }}><IconSettings /></span>
-            {!collapsed && <span>Settings</span>}
+            {!collapsed && <span>Aging Config</span>}
           </button>
 
           <button
