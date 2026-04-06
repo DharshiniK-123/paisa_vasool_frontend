@@ -6,7 +6,6 @@ import type {
   UploadResponse,
   JobStatusResponse,
   SaveResponse,
-  DocumentType,
 } from '../types/Document';
 
 const BASE = '/api/v1/payment_intake_matching/documents';
@@ -56,11 +55,12 @@ async function pollUntilDone(
 
 export const documentService = {
 
-  upload: async (file: File, documentType: DocumentType): Promise<UploadResponse> => {
+  // No document_type param — backend classifies automatically
+  upload: async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     const res = await axiosInstance.post<UploadResponse>(
-      `${BASE}/upload?document_type=${documentType}`,
+      `${BASE}/upload`,
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } },
     );
@@ -68,12 +68,11 @@ export const documentService = {
   },
 
   pollJobStatus: pollUntilDone,
-
   pollJobUntilDone: pollUntilDone,
 
   saveRecords: async (
     documentId: number,
-    documentType: DocumentType,
+    documentType: 'INVOICE' | 'PAYMENT',
     records: (InvoiceRecord | PaymentRecord)[],
   ): Promise<SaveResponse> => {
     const res = await axiosInstance.post<SaveResponse>(`${BASE}/${documentId}/save`, {

@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { extractErrorMessage } from '../utils/errorUtils';
 import UploadProgressBanner from '../features/documents/components/UploadProgressBanner';
+import UploadModal from '../features/documents/components/InlineUploadPanel';
 import { ROUTES } from '../config/constants';
 import { logoutThunk, logout } from '../features/auth';
 import { agingConfigService, type AgingRule, type SchedulerSettings } from '../features/matching/services/agingConfigService';
@@ -705,7 +706,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
                 }}>
                   {(user as { email?: string }).email}
                 </p>
-                <p style={{ fontSize: '0.62rem', color: 'var(--color-muted)' }}>Operator</p>
+                <p style={{ fontSize: '0.62rem', color: 'var(--color-muted)' }}>Finance Associate</p>
               </div>
             </div>
           )}
@@ -727,7 +728,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
             onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = 'var(--color-muted)'; el.style.borderColor = 'transparent'; }}
           >
             <span style={{ flexShrink: 0, display: 'flex' }}><IconSettings /></span>
-            {!collapsed && <span>Settings</span>}
+            {!collapsed && <span>Aging Config</span>}
           </button>
 
           <button
@@ -762,27 +763,69 @@ function TopBar() {
   const page = PAGE_TITLES[location.pathname] ?? { title: 'Paisa Vasool', subtitle: '' };
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   return (
-    <header className="dashboard-header">
-      <div>
-        <h1 className="font-display" style={{
-          fontSize: '1.1rem', fontWeight: 700,
-          color: 'var(--color-text)', letterSpacing: '-0.01em', lineHeight: 1.2,
-        }}>
-          {page.title}
-        </h1>
-        <p style={{ fontSize: '0.68rem', color: 'var(--color-muted)', marginTop: '0.1rem' }}>
-          {page.subtitle || dateStr}
-        </p>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)' }}>
-          {dateStr}
-        </span>
-       
-      </div>
-    </header>
+    <>
+      <header className="dashboard-header">
+        <div>
+          <h1 className="font-display" style={{
+            fontSize: '1.1rem', fontWeight: 700,
+            color: 'var(--color-text)', letterSpacing: '-0.01em', lineHeight: 1.2,
+          }}>
+            {page.title}
+          </h1>
+          <p style={{ fontSize: '0.68rem', color: 'var(--color-muted)', marginTop: '0.1rem' }}>
+            {page.subtitle || dateStr}
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--color-muted)' }}>
+            {dateStr}
+          </span>
+          {/* Upload button — opens modal popup */}
+          <button
+            onClick={() => setUploadOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.5rem 1rem', borderRadius: 9,
+              border: '1px solid var(--color-border)',
+              background: 'var(--color-surface)',
+              cursor: 'pointer', color: 'var(--color-muted)',
+              fontSize: '0.75rem', fontWeight: 600,
+              fontFamily: "'DM Sans', sans-serif",
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.borderColor = 'var(--color-accent)';
+              el.style.color = 'var(--color-accent)';
+              el.style.background = 'var(--color-accent-soft)';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.borderColor = 'var(--color-border)';
+              el.style.color = 'var(--color-muted)';
+              el.style.background = 'var(--color-surface)';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload Document
+          </button>
+        </div>
+      </header>
+
+      {uploadOpen && (
+        <UploadModal
+          onClose={() => setUploadOpen(false)}
+          onSuccess={() => {}}
+        />
+      )}
+    </>
   );
 }
 

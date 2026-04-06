@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../services/adminService';
 import type { FinanceUser, CreateUserPayload } from '../types';
 import { extractErrorMessage } from '../../../utils/errorUtils';
+import Pagination from '../../../components/common/Pagination';
 
 
 const IconUsers = () => (
@@ -423,6 +424,10 @@ export default function UserManagementPage() {
   const [confirmUser, setConfirmUser] = useState<FinanceUser | null>(null);
   const [toggling, setToggling] = useState<number | null>(null);
 
+  // ─── Pagination state ──────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize,    setPageSize]    = useState(25);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true); setError('');
     try {
@@ -473,6 +478,14 @@ export default function UserManagementPage() {
       (statusFilter === 'inactive' && u.is_active !== 'active');
     return matchSearch && matchStatus;
   });
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+
+  // ─── Paginate the filtered list ────────────────────────────────────────────
+  const totalItems = filtered.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginated  = filtered.slice(startIndex, startIndex + pageSize);
 
   const activeCount   = users.filter(u => u.is_active === 'active').length;
   const inactiveCount = users.filter(u => u.is_active !== 'active').length;
@@ -578,7 +591,7 @@ export default function UserManagementPage() {
             )}
           </div>
         ) : (
-          filtered.map(user => (
+          paginated.map(user => (
             <UserRow
               key={user.id}
               user={user}
@@ -588,13 +601,15 @@ export default function UserManagementPage() {
           ))
         )}
 
-        {/* Footer count */}
+        {/* Pagination footer */}
         {!loading && filtered.length > 0 && (
-          <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface-2)' }}>
-            <p style={{ fontSize: '0.72rem', color: 'var(--color-faint)' }}>
-              Showing {filtered.length} of {users.length} user{users.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          />
         )}
       </div>
 
