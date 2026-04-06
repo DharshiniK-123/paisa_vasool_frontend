@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useInvoices } from '../hooks/useInvoices';
 import { invoiceService } from '../services/invoiceService';
-import InlineUploadPanel from '../../documents/components/InlineUploadPanel';
+
 import type { Invoice, InvoiceMatch, PaymentStatus } from '../types/Invoice';
 import Pagination from '../../../components/common/Pagination';
 import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
@@ -791,7 +791,7 @@ export default function InvoiceTable() {
         </div>
       )}
 
-      <InlineUploadPanel docType="INVOICE" onSuccess={refresh} />
+
 
       {error && (
         <div className="banner banner-error animate-fade-in">

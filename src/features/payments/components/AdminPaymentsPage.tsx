@@ -4,6 +4,7 @@ import type { Payment } from '../../payments/types/Payment';
 import type { FinanceUser } from '../../UserManagement/types';
 import { adminService } from '../../UserManagement/services/adminService';
 import { extractErrorMessage } from '../../../utils/errorUtils';
+import Pagination from '../../../components/common/Pagination';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface EnrichedPayment extends Payment {
@@ -101,6 +102,10 @@ export default function AdminPaymentsPage() {
   const [userFilter,   setUserFilter]   = useState<number | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  // ─── Pagination state ──────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize,    setPageSize]    = useState(25);
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError('');
@@ -135,6 +140,14 @@ export default function AdminPaymentsPage() {
     const matchStatus = statusFilter === 'all' || (pay.match_status ?? 'UNMATCHED').toUpperCase() === statusFilter;
     return matchSearch && matchUser && matchStatus;
   });
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [search, userFilter, statusFilter]);
+
+  // ─── Paginate the filtered list ────────────────────────────────────────────
+  const totalItems = filtered.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginated  = filtered.slice(startIndex, startIndex + pageSize);
 
   const statuses = ['all', 'FULL', 'PARTIAL', 'OVERPAYMENT', 'FAILED', 'UNMATCHED'];
 
@@ -208,7 +221,7 @@ export default function AdminPaymentsPage() {
                 </p>
               </div>
             )
-            : filtered.map(pay => (
+            : paginated.map(pay => (
               <div
                 key={pay.id}
                 style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr 1fr 1fr', gap: '1rem', padding: '0.875rem 1.25rem', borderBottom: '1px solid var(--color-border)', alignItems: 'center', transition: 'background 0.15s' }}
@@ -249,12 +262,15 @@ export default function AdminPaymentsPage() {
             ))
         }
 
+        {/* Pagination footer */}
         {!loading && filtered.length > 0 && (
-          <div style={{ padding: '0.625rem 1.25rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface-2)' }}>
-            <p style={{ fontSize: '0.7rem', color: 'var(--color-faint)' }}>
-              Showing {filtered.length} of {payments.length} payments
-            </p>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          />
         )}
       </div>
 

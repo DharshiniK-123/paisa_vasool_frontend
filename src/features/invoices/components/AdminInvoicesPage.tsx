@@ -4,6 +4,7 @@ import type { Invoice } from '../../invoices/types/Invoice';
 import type { FinanceUser } from '../../UserManagement/types';
 import { adminService } from '../../UserManagement/services/adminService';
 import { extractErrorMessage } from '../../../utils/errorUtils';
+import Pagination from '../../../components/common/Pagination';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface EnrichedInvoice extends Invoice {
@@ -101,6 +102,10 @@ export default function AdminInvoicesPage() {
   const [userFilter, setUserFilter] = useState<number | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  // ─── Pagination state ──────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize,    setPageSize]    = useState(25);
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError('');
@@ -135,6 +140,14 @@ export default function AdminInvoicesPage() {
     const matchStatus = statusFilter === 'all' || (inv.payment_status ?? 'PENDING').toUpperCase() === statusFilter;
     return matchSearch && matchUser && matchStatus;
   });
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [search, userFilter, statusFilter]);
+
+  // ─── Paginate the filtered list ────────────────────────────────────────────
+  const totalItems = filtered.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginated  = filtered.slice(startIndex, startIndex + pageSize);
 
   const statuses = ['all', 'PAID', 'UNPAID', 'PARTIAL', 'OVERPAID'];
 
@@ -233,7 +246,7 @@ export default function AdminInvoicesPage() {
                 </p>
               </div>
             )
-            : filtered.map(inv => (
+            : paginated.map(inv => (
               <div
                 key={inv.id}
                 style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.2fr 1fr 1fr 1fr', gap: '1rem', padding: '0.875rem 1.25rem', borderBottom: '1px solid var(--color-border)', alignItems: 'center', transition: 'background 0.15s' }}
@@ -290,15 +303,15 @@ export default function AdminInvoicesPage() {
             ))
         }
 
-        {/* Footer */}
+        {/* Pagination footer */}
         {!loading && filtered.length > 0 && (
-          <div style={{ padding: '0.625rem 1.25rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface-2)' }}>
-            <p style={{ fontSize: '0.7rem', color: 'var(--color-faint)' }}>
-              Showing {filtered.length} of {invoices.length} invoices
-              {userFilter !== 'all' && ` · filtered by user`}
-              {statusFilter !== 'all' && ` · status: ${statusFilter}`}
-            </p>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          />
         )}
       </div>
 

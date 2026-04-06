@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePayments } from '../hooks/usePayments';
-import InlineUploadPanel from '../../documents/components/InlineUploadPanel';
+
 import type { Payment } from '../types/Payment';
 import Pagination from '../../../components/common/Pagination';
 
@@ -227,7 +227,7 @@ export default function PaymentTable() {
         </div>
       )}
 
-      <InlineUploadPanel docType="PAYMENT" onSuccess={refresh} />
+
 
       {error && (
         <div className="banner banner-error animate-fade-in">

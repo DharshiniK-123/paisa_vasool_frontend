@@ -4,6 +4,7 @@ import type { Reminder } from '../../reminders/types/Reminder';
 import type { FinanceUser } from '../../UserManagement/types';
 import { adminService } from '../../UserManagement/services/adminService';
 import { extractErrorMessage } from '../../../utils/errorUtils';
+import Pagination from '../../../components/common/Pagination';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const IconReminder = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
@@ -94,6 +95,10 @@ export default function AdminRemindersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedId,   setExpandedId]   = useState<number | null>(null);
 
+  // ─── Pagination state ──────────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize,    setPageSize]    = useState(25);
+
   // Note: reminderService.fetchAll() — admin backend returns ALL reminders when called by admin role
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -149,6 +154,14 @@ export default function AdminRemindersPage() {
     })();
     return matchSearch && matchStatus && matchUser;
   });
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [search, userFilter, statusFilter]);
+
+  // ─── Paginate the filtered list ────────────────────────────────────────────
+  const totalItems = filtered.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginated  = filtered.slice(startIndex, startIndex + pageSize);
 
   const statuses = ['all', 'SENT', 'FAILED', 'PENDING'];
 
@@ -247,7 +260,7 @@ export default function AdminRemindersPage() {
                 </p>
               </div>
             )
-            : filtered.map(r => (
+            : paginated.map(r => (
               <div key={r.id}>
                 <div
                   style={{ display: 'grid', gridTemplateColumns: '24px 1.5fr 1.5fr 1fr 1fr 1fr', gap: '1rem', padding: '0.875rem 1.25rem', borderBottom: expandedId === r.id ? 'none' : '1px solid var(--color-border)', alignItems: 'center', transition: 'background 0.15s', cursor: 'pointer' }}
@@ -293,12 +306,15 @@ export default function AdminRemindersPage() {
             ))
         }
 
+        {/* Pagination footer */}
         {!loading && filtered.length > 0 && (
-          <div style={{ padding: '0.625rem 1.25rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface-2)' }}>
-            <p style={{ fontSize: '0.7rem', color: 'var(--color-faint)' }}>
-              Showing {filtered.length} of {reminders.length} reminders · Click a row to expand details
-            </p>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          />
         )}
       </div>
 

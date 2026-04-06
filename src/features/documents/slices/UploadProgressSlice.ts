@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import type { InvoiceRecord, PaymentRecord, DocumentType } from '../types/Document';
+import type { InvoiceRecord, PaymentRecord, JobStatusResponse } from '../types/Document';
 import { documentService } from '../services/documentService';
 import { extractErrorMessage } from '../../../utils/errorUtils';
 
@@ -17,11 +17,12 @@ export interface UploadProgressState {
   jobId:           string | null;
   documentId:      number | null;
   fileName:        string | null;
-  documentType:    DocumentType | null;
+  // documentType is now set from the backend job response, not from user input
+  documentType:    'INVOICE' | 'PAYMENT' | null;
   previewRows:     (InvoiceRecord | PaymentRecord)[];
   error:           string | null;
   savedCount:      number | null;
-  reviewRequested: boolean; 
+  reviewRequested: boolean;
 }
 
 const initialState: UploadProgressState = {
@@ -36,7 +37,6 @@ const initialState: UploadProgressState = {
   reviewRequested: false,
 };
 
-
 export const startPollingThunk = createAsyncThunk(
   'uploadProgress/startPolling',
   async ({ jobId }: { jobId: string }, { rejectWithValue }) => {
@@ -47,12 +47,13 @@ export const startPollingThunk = createAsyncThunk(
     }
   }
 );
+
 export const saveProgressRecordsThunk = createAsyncThunk(
   'uploadProgress/save',
   async (
     { documentId, documentType, records }: {
       documentId: number;
-      documentType: DocumentType;
+      documentType: 'INVOICE' | 'PAYMENT';
       records: (InvoiceRecord | PaymentRecord)[];
     },
     { rejectWithValue }
@@ -65,22 +66,21 @@ export const saveProgressRecordsThunk = createAsyncThunk(
   }
 );
 
-
 const uploadProgressSlice = createSlice({
   name: 'uploadProgress',
   initialState,
   reducers: {
+    // documentType removed from uploadStarted — we don't know it yet
     uploadStarted(state, action: PayloadAction<{
       jobId: string;
       documentId: number;
       fileName: string;
-      documentType: DocumentType;
     }>) {
       state.status       = 'uploading';
       state.jobId        = action.payload.jobId;
       state.documentId   = action.payload.documentId;
       state.fileName     = action.payload.fileName;
-      state.documentType = action.payload.documentType;
+      state.documentType = null;   // will be set once extraction is done
       state.previewRows  = [];
       state.error        = null;
       state.savedCount   = null;
@@ -91,9 +91,14 @@ const uploadProgressSlice = createSlice({
       state.error  = null;
     },
 
-    extractionDone(state, action: PayloadAction<(InvoiceRecord | PaymentRecord)[]>) {
-      state.status      = 'extracted';
-      state.previewRows = action.payload;
+    // documentType now comes from the job status response
+    extractionDone(state, action: PayloadAction<{
+      rows: (InvoiceRecord | PaymentRecord)[];
+      documentType: 'INVOICE' | 'PAYMENT';
+    }>) {
+      state.status       = 'extracted';
+      state.previewRows  = action.payload.rows;
+      state.documentType = action.payload.documentType;
     },
 
     savingStarted(state) {
@@ -131,9 +136,10 @@ const uploadProgressSlice = createSlice({
         state.status = 'polling';
         state.error  = null;
       })
-      .addCase(startPollingThunk.fulfilled, (state, action) => {
-        state.status      = 'extracted';
-        state.previewRows = action.payload.preview_data ?? [];
+      .addCase(startPollingThunk.fulfilled, (state, action: PayloadAction<JobStatusResponse>) => {
+        state.status       = 'extracted';
+        state.previewRows  = action.payload.preview_data ?? [];
+        state.documentType = action.payload.document_type ?? null;
       })
       .addCase(startPollingThunk.rejected, (state, action) => {
         state.status = 'failed';
